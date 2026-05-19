@@ -39,7 +39,7 @@ const restoreStockForOrder = async (order, io) => {
   }
 };
 
-const reduceStockForOrder = async (order, io) => {
+export const reduceStockForOrder = async (order, io) => {
   for (const item of order.items) {
     const product = await Product.findById(item.product);
     if (!product || product.stock < item.qty) {
@@ -74,7 +74,7 @@ const notifyOrderUpdate = async ({ user, subject, message, template, meta }) => 
   });
 };
 
-const serializeOrder = (order) => ({
+export const serializeOrder = (order) => ({
   ...order.toObject(),
   canCancel: canCancelOrder(order.orderStatus),
   canReturn: canRequestReturn(order.orderStatus, order.returnRequest?.status)
@@ -165,13 +165,14 @@ export const createOrder = async (req, res) => {
     statusTimeline: [{ status: "PLACED", note: "Order placed successfully.", changedAt: new Date() }]
   });
   order.invoiceNumber = buildInvoiceNumber(order._id);
+  let paymentResult = null;
 
   if (normalizedPaymentMethod === "COD") {
     await reduceStockForOrder(order, req.io);
     order.orderStatus = "CONFIRMED";
     order.statusTimeline = pushStatus(order.statusTimeline, "CONFIRMED", "Cash on delivery order confirmed.");
   } else {
-    const paymentResult = await processPayment({
+    paymentResult = await processPayment({
       paymentMethod: normalizedPaymentMethod,
       orderData: {
         orderId: order._id,
@@ -183,12 +184,19 @@ export const createOrder = async (req, res) => {
 
     order.paymentStatus = paymentResult.status;
     order.transactionId = paymentResult.transactionId;
-    order.orderStatus = paymentResult.success ? "CONFIRMED" : "PAYMENT_FAILED";
-    order.statusTimeline = pushStatus(
-      order.statusTimeline,
-      paymentResult.success ? "CONFIRMED" : "PAYMENT_FAILED",
-      paymentResult.success ? "Mock online payment successful." : "Payment failed."
-    );
+    order.razorpayOrderId = paymentResult.gatewayOrder?.id || order.razorpayOrderId;
+
+    if (paymentResult.status === "PENDING") {
+      order.orderStatus = "PLACED";
+      order.statusTimeline = pushStatus(order.statusTimeline, "PLACED", "Awaiting online payment.");
+    } else {
+      order.orderStatus = paymentResult.success ? "CONFIRMED" : "PAYMENT_FAILED";
+      order.statusTimeline = pushStatus(
+        order.statusTimeline,
+        paymentResult.success ? "CONFIRMED" : "PAYMENT_FAILED",
+        paymentResult.success ? "Online payment successful." : "Payment failed."
+      );
+    }
 
     if (paymentResult.success) {
       await reduceStockForOrder(order, req.io);
@@ -196,7 +204,9 @@ export const createOrder = async (req, res) => {
   }
 
   await order.save();
-  await Cart.findOneAndUpdate({ user: req.user._id }, { $set: { items: [] } });
+  if (normalizedPaymentMethod === "COD" || order.paymentStatus === "PAID") {
+    await Cart.findOneAndUpdate({ user: req.user._id }, { $set: { items: [] } });
+  }
 
   req.io.to(`user:${req.user._id}`).emit("orderCreated", serializeOrder(order));
   req.io.to(`user:${req.user._id}`).emit("paymentStatusUpdated", {
@@ -219,7 +229,8 @@ export const createOrder = async (req, res) => {
     payment: {
       paymentMethod: normalizedPaymentMethod,
       paymentStatus: order.paymentStatus,
-      transactionId: order.transactionId || null
+      transactionId: order.transactionId || null,
+      razorpay: paymentResult?.gatewayOrder || null
     }
   });
 };

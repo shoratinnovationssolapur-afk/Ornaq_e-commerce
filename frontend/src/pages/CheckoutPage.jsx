@@ -3,16 +3,34 @@ import { useNavigate } from "react-router-dom";
 import api, { getApiErrorMessage } from "../services/api";
 import { useStore } from "../context/StoreContext";
 import { useNotification } from "../context/NotificationContext";
+import { useAuth } from "../context/AuthContext";
 import PaymentModal from "../components/PaymentModal";
 import { formatCurrency } from "../utils/catalog";
 
 const FREE_SHIPPING_THRESHOLD = 999;
 const SHIPPING_FEE = 50;
+const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
+
+const loadRazorpayScript = () =>
+  new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = RAZORPAY_CHECKOUT_URL;
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Unable to load Razorpay Checkout."));
+    document.body.appendChild(script);
+  });
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, cartSummary, clearCart } = useStore();
   const { showToast } = useNotification();
+  const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
@@ -44,9 +62,8 @@ export default function CheckoutPage() {
     setProcessing(true);
     setError("");
     try {
-      const method = paymentMethod === "COD" ? "COD" : "MOCK";
       const res = await api.post("/orders", {
-        paymentMethod: method,
+        paymentMethod: paymentMethod === "COD" ? "COD" : "RAZORPAY",
         items: cart.map((item) => ({
           product: item._id,
           qty: item.qty,
@@ -54,6 +71,71 @@ export default function CheckoutPage() {
         })),
         shippingAddress: address
       });
+
+      if (paymentMethod === "ONLINE") {
+        const razorpay = res.data?.payment?.razorpay;
+        if (!razorpay?.key || !razorpay?.id) {
+          throw new Error("Razorpay order was not created.");
+        }
+
+        await loadRazorpayScript();
+        setProcessing(false);
+
+        const checkout = new window.Razorpay({
+          key: razorpay.key,
+          amount: razorpay.amount,
+          currency: razorpay.currency || "INR",
+          name: "Ornac",
+          description: "Order payment",
+          order_id: razorpay.id,
+          prefill: {
+            name: address.name || user?.name || "",
+            email: user?.email || "",
+            contact: address.phone || user?.phone || ""
+          },
+          theme: {
+            color: "#7c3aed"
+          },
+          handler: async (paymentResponse) => {
+            setProcessing(true);
+            try {
+              const verifyRes = await api.post("/payments/razorpay/verify", paymentResponse);
+              await clearCart();
+              showToast({
+                title: "Payment successful",
+                message: "Your Razorpay payment was verified and the order is confirmed.",
+                tone: "success"
+              });
+              navigate("/order-result", { state: verifyRes.data });
+            } catch (verifyError) {
+              const message = getApiErrorMessage(verifyError, "Payment verification failed");
+              setError(message);
+              navigate("/order-result", {
+                state: {
+                  order: res.data?.order || null,
+                  payment: {
+                    paymentMethod: "RAZORPAY",
+                    paymentStatus: "FAILED",
+                    transactionId: null
+                  },
+                  message
+                }
+              });
+            } finally {
+              setProcessing(false);
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setError("Payment was cancelled. Your order is still pending until payment is completed.");
+            }
+          }
+        });
+
+        checkout.open();
+        return;
+      }
+
       if (res.data?.order?.paymentStatus !== "FAILED") {
         await clearCart();
         showToast({
@@ -65,7 +147,8 @@ export default function CheckoutPage() {
       navigate("/order-result", { state: res.data });
     } catch (errorResponse) {
       const message = getApiErrorMessage(errorResponse, "Order failed");
-      setError(message);
+      const resolvedMessage = errorResponse.message || message;
+      setError(resolvedMessage);
       navigate("/order-result", {
         state: {
           order: null,
@@ -74,7 +157,7 @@ export default function CheckoutPage() {
             paymentStatus: "FAILED",
             transactionId: null
           },
-          message
+          message: resolvedMessage
         }
       });
     } finally {
