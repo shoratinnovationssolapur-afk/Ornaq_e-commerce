@@ -79,7 +79,7 @@ export default function ProductManagementPage() {
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Inventory</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-stone-900 sm:text-5xl">Catalog Sovereignty</h1>
             <p className="mt-4 max-w-2xl text-sm font-medium text-stone-500 sm:text-base">
-              Orchestrate your luxury collection. Search inventory, refine metadata, and maintain real-time stock integrity across your premium handloom catalog.
+              Orchestrate your luxury collection. Search inventory, refine metadata, and maintain real-time stock integrity across sarees and imitation jewellery.
             </p>
           </div>
           <Link to="/admin/products/add" className="btn-primary px-8 lg:mb-2">
@@ -91,7 +91,7 @@ export default function ProductManagementPage() {
           <div className="lg:col-span-2">
             <input
               type="search"
-              placeholder="Search by name, fabric, or keyword..."
+              placeholder="Search by name, material, or keyword..."
               className="w-full rounded-2xl bg-stone-50 px-5 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
               value={filters.searchQuery}
               onChange={(event) => setFilters((current) => ({ ...current, searchQuery: event.target.value }))}

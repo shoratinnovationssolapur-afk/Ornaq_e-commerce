@@ -6,7 +6,7 @@ import api from "../services/api";
 import ProductCard from "../components/ProductCard";
 import ReviewSection from "../components/ReviewSection";
 import SkeletonBlock from "../components/SkeletonBlock";
-import { formatCurrency, getProductColors, getProductImage } from "../utils/catalog";
+import { formatCurrency, getProductColors, getProductImage, getProductTypeLabel } from "../utils/catalog";
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -41,6 +41,7 @@ export default function ProductPage() {
 
   const effectivePrice = useMemo(() => product?.discountPrice || product?.price || 0, [product]);
   const productColors = useMemo(() => getProductColors(product), [product]);
+  const productTypeLabel = useMemo(() => getProductTypeLabel(product), [product]);
   const activeVariant = useMemo(
     () => product?.variants?.find((variant) => variant.color === selectedColor) || null,
     [product, selectedColor]
@@ -152,7 +153,7 @@ export default function ProductPage() {
 
             {productColors.length > 0 && (
               <div>
-                <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Select Saree Color</p>
+                <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Select {productTypeLabel} Color</p>
                 <div className="flex flex-wrap gap-3">
                   {productColors.map((color) => (
                     <button

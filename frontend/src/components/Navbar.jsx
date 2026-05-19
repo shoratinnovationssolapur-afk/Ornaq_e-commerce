@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "../context/StoreContext";
 import { useAuth } from "../context/AuthContext";
+import { JEWELLERY_CATEGORY } from "../utils/catalog";
 
 export default function Navbar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -18,6 +19,9 @@ export default function Navbar() {
   const toggleMobileMenu = () => setIsMobileOpen(!isMobileOpen);
 
   const closeMobileMenu = () => setIsMobileOpen(false);
+  const isJewelleryView =
+    location.pathname === "/shop" &&
+    new URLSearchParams(location.search).get("category") === JEWELLERY_CATEGORY;
 
   return (
     <>
@@ -43,6 +47,14 @@ export default function Navbar() {
             >
               Shop
             </NavLink>
+            <Link
+              to={`/shop?category=${encodeURIComponent(JEWELLERY_CATEGORY)}`}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                isJewelleryView ? "text-brand-700 border-b-2 border-brand-700" : "text-zinc-500 hover:text-zinc-900"
+              }`}
+            >
+              Jewellery
+            </Link>
             <NavLink 
               to="/cart" 
               className={({ isActive }) => `relative px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
@@ -154,6 +166,12 @@ export default function Navbar() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </NavLink>
+                  <Link to={`/shop?category=${encodeURIComponent(JEWELLERY_CATEGORY)}`} className="nav-link" onClick={closeMobileMenu}>
+                    <span className="flex-1">Imitation Jewellery</span>
+                    <svg className="h-5 w-5 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
                   <NavLink to="/cart" className="nav-link" onClick={closeMobileMenu}>
                     <span className="flex-1">My Cart</span>
                     <span className="bg-brand-100 text-brand-700 px-2 py-0.5 rounded text-xs font-bold mr-3">{cartCount}</span>

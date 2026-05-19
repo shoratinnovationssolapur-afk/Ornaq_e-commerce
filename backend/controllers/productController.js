@@ -15,6 +15,7 @@ import {
 } from "../utils/productUtils.js";
 
 const normalizeString = (value) => (typeof value === "string" ? value.trim() : "");
+const JEWELLERY_CATEGORY = "Imitation Jewellery";
 
 const parseNumber = (value, fallback) => {
   if (value === "" || value === undefined || value === null) return fallback;
@@ -437,16 +438,21 @@ export const getNewArrivals = async (_req, res) => {
 };
 
 export const getHomeFeed = async (_req, res) => {
-  const [newArrivals, trending, featured] = await Promise.all([
+  const [newArrivals, trending, featured, jewellerySpotlight] = await Promise.all([
     Product.find({ isNewArrival: true }).sort({ createdAt: -1 }).limit(8).lean(),
     Product.find().sort({ popularityScore: -1, soldCount: -1, views: -1 }).limit(8).lean(),
-    Product.find({ featured: true }).sort({ createdAt: -1 }).limit(8).lean()
+    Product.find({ featured: true }).sort({ createdAt: -1 }).limit(8).lean(),
+    Product.find({ category: new RegExp(`^${escapeRegex(JEWELLERY_CATEGORY)}$`, "i") })
+      .sort({ featured: -1, createdAt: -1 })
+      .limit(8)
+      .lean()
   ]);
 
   res.json({
     newArrivals: newArrivals.map(formatProduct).filter((product) => product.isNewArrival),
     trending: trending.map(formatProduct),
-    recommended: featured.map(formatProduct)
+    recommended: featured.map(formatProduct),
+    jewellerySpotlight: jewellerySpotlight.map(formatProduct)
   });
 };
 
