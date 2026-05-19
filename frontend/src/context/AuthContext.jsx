@@ -7,6 +7,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isAdmin = useMemo(() => String(user?.role || "").toLowerCase() === "admin", [user]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -49,14 +50,11 @@ export function AuthProvider({ children }) {
   };
 
   const requestOtp = async ({ phone, name, email }) => {
-    console.log("Requesting OTP for:", phone);
     const res = await api.post("/auth/request-otp", { phone, name, email });
-    console.log("OTP Request Response:", res.data);
     return res.data;
   };
 
   const verifyOtp = async ({ phone, otp }) => {
-    console.log("Verifying OTP for:", phone, "with code:", otp);
     const res = await api.post("/auth/verify-otp", { phone, otp });
     return persistSession(res.data).user;
   };
@@ -73,8 +71,8 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ user, loading, login, adminLogin, register, requestOtp, verifyOtp, googleLogin, logout }),
-    [user, loading]
+    () => ({ user, isAdmin, loading, login, adminLogin, register, requestOtp, verifyOtp, googleLogin, logout }),
+    [user, isAdmin, loading]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

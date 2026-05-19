@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
-import { Mail, Lock, Phone, ArrowRight } from "lucide-react";
+import { Mail, Lock, Phone, ShieldCheck, UserRound } from "lucide-react";
 
 // Lightweight JWT payload decoder for Google credential (no external lib needed)
 const decodeJwtPayload = (token) => {
@@ -23,25 +23,55 @@ const decodeJwtPayload = (token) => {
   }
 };
 
-export default function LoginPage() {
+export default function LoginPage({ initialAccountType }) {
   const navigate = useNavigate();
-  const { login, requestOtp, verifyOtp, googleLogin } = useAuth();
+  const location = useLocation();
+  const defaultAccountType = initialAccountType || (location.pathname.startsWith("/admin") ? "admin" : "user");
+  const { user, isAdmin, loading: authLoading, login, adminLogin, requestOtp, verifyOtp, googleLogin } = useAuth();
+  const [accountType, setAccountType] = useState(defaultAccountType);
   const [activeTab, setActiveTab] = useState("password"); // 'password' or 'otp'
   const [form, setForm] = useState({ email: "", password: "", phone: "", otp: "" });
   const [otpRequested, setOtpRequested] = useState(false);
   const [previewCode, setPreviewCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [adminRedirectTo, setAdminRedirectTo] = useState("/admin/dashboard");
+
+  const isAdminLogin = accountType === "admin";
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (isAdmin) {
+      navigate(adminRedirectTo, { replace: true });
+      return;
+    }
+    if (user && !isAdminLogin && location.pathname === "/login") {
+      navigate("/", { replace: true });
+    }
+  }, [adminRedirectTo, authLoading, isAdmin, isAdminLogin, location.pathname, navigate, user]);
+
+  const selectAccountType = (type) => {
+    setAccountType(type);
+    setActiveTab("password");
+    setOtpRequested(false);
+    setPreviewCode("");
+    setError("");
+  };
 
   const submitPasswordLogin = async (event) => {
     event.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await login(form.email, form.password);
-      navigate("/");
+      if (isAdminLogin) {
+        const response = await adminLogin(form.email, form.password);
+        setAdminRedirectTo(response.redirectTo || "/admin/dashboard");
+      } else {
+        await login(form.email, form.password);
+        navigate("/");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid credentials. Please try again.");
+      setError(err.response?.data?.message || (isAdminLogin ? "Admin login failed" : "Invalid credentials. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -77,17 +107,40 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
-      title="Elegance Redefined"
-      subtitle="Sign in to explore our latest collections and manage your luxury orders with ease."
+      title={isAdminLogin ? "Admin Control" : "Elegance Redefined"}
+      subtitle={isAdminLogin ? "Manage catalog, stock, and orders from one secure workspace." : "Sign in to explore our latest collections and manage your luxury orders with ease."}
       image="/src/assets/hero-banner.png"
     >
       <div className="mb-10">
         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Account Access</p>
-        <h1 className="mt-3 text-3xl font-black text-stone-900 sm:text-4xl">Welcome Back</h1>
+        <h1 className="mt-3 text-3xl font-black text-stone-900 sm:text-4xl">{isAdminLogin ? "Admin Sign In" : "Welcome Back"}</h1>
+      </div>
+
+      <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl bg-stone-50 p-1.5">
+        <button
+          type="button"
+          onClick={() => selectAccountType("user")}
+          className={`flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-black uppercase tracking-widest transition-all ${
+            !isAdminLogin ? "bg-white text-stone-900 shadow-xl shadow-stone-200/50" : "text-stone-400 hover:text-stone-600"
+          }`}
+        >
+          <UserRound size={16} />
+          User
+        </button>
+        <button
+          type="button"
+          onClick={() => selectAccountType("admin")}
+          className={`flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-black uppercase tracking-widest transition-all ${
+            isAdminLogin ? "bg-white text-stone-900 shadow-xl shadow-stone-200/50" : "text-stone-400 hover:text-stone-600"
+          }`}
+        >
+          <ShieldCheck size={16} />
+          Admin
+        </button>
       </div>
 
       {/* Tabs */}
-      <div className="mb-8 flex gap-2 rounded-2xl bg-stone-50 p-1.5">
+      {!isAdminLogin && <div className="mb-8 flex gap-2 rounded-2xl bg-stone-50 p-1.5">
         <button
           onClick={() => setActiveTab("password")}
           className={`flex-1 rounded-xl py-3 text-xs font-black uppercase tracking-widest transition-all ${
@@ -104,7 +157,7 @@ export default function LoginPage() {
         >
           Mobile OTP
         </button>
-      </div>
+      </div>}
 
       <AnimatePresence mode="wait">
         {activeTab === "password" ? (
@@ -124,7 +177,7 @@ export default function LoginPage() {
                   required
                   className="w-full rounded-2xl bg-stone-50 px-5 py-4 pl-12 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
                   type="email"
-                  placeholder="name@luxury.com"
+                  placeholder={isAdminLogin ? "admin@ornac.com" : "name@luxury.com"}
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                 />
@@ -133,9 +186,9 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between px-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Password</label>
-                <Link to="/forgot-password" shaking className="text-[10px] font-black uppercase tracking-widest text-brand-700 hover:text-brand-800">
+                {!isAdminLogin && <Link to="/forgot-password" className="text-[10px] font-black uppercase tracking-widest text-brand-700 hover:text-brand-800">
                   Forgot?
-                </Link>
+                </Link>}
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-300" size={18} />
@@ -154,7 +207,7 @@ export default function LoginPage() {
               disabled={loading}
               className="btn-primary w-full py-4 shadow-xl shadow-stone-200/50 mt-4"
             >
-              {loading ? "Verifying..." : "Sign In Securely"}
+              {loading ? "Verifying..." : isAdminLogin ? "Sign In to Dashboard" : "Sign In Securely"}
             </button>
           </motion.form>
         ) : (
@@ -231,6 +284,7 @@ export default function LoginPage() {
         )}
       </AnimatePresence>
 
+      {!isAdminLogin && <>
       <div className="relative my-10">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-stone-100"></div>
@@ -279,6 +333,7 @@ export default function LoginPage() {
           Create Account
         </Link>
       </p>
+      </>}
     </AuthLayout>
   );
 }

@@ -27,10 +27,12 @@ import ToastViewport from "./components/ToastViewport";
 function AppRoutes() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const isAdminLoginRoute = location.pathname === "/admin" || location.pathname === "/admin/login";
+  const showAdminChrome = isAdminRoute && !isAdminLoginRoute;
 
   return (
     <>
-      {isAdminRoute ? <AdminNavbar /> : <Navbar />}
+      {showAdminChrome ? <AdminNavbar /> : <Navbar />}
       <ToastViewport />
       <main className="pt-16 overflow-x-hidden min-h-screen bg-[#fffdf9]">
         <Routes>
@@ -63,7 +65,7 @@ function AppRoutes() {
           <Route path="/contact" element={<InfoPage slug="contact" />} />
           <Route path="/faq" element={<InfoPage slug="faq" />} />
         </Routes>
-        {!isAdminRoute && <BusinessFooter />}
+        {!showAdminChrome && <BusinessFooter />}
       </main>
     </>
   );
