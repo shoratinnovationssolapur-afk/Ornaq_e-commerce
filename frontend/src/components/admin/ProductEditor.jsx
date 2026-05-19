@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
-import { getProductColors, getProductImage, mergeCategories } from "../../utils/catalog";
+import { getProductColors, getProductImage, isJewelleryCategory, mergeCategories } from "../../utils/catalog";
 
 const emptyForm = {
   name: "",
@@ -23,6 +23,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const categoryList = useMemo(() => mergeCategories(categories), [categories]);
+  const formIsJewellery = isJewelleryCategory(form.category);
 
   useEffect(() => {
     if (!product) {
@@ -97,7 +98,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
       <div className="w-full max-w-4xl overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-stone-950/20">
         <div className="flex items-center justify-between border-b border-stone-200 px-6 py-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-stone-400">Edit saree</p>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-stone-400">Edit product</p>
             <h2 className="mt-1 text-2xl font-semibold text-stone-900">{product.name}</h2>
           </div>
           <button type="button" onClick={onClose} className="rounded-full border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-600 hover:border-stone-300 hover:text-stone-900">
@@ -129,7 +130,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Fabric</label>
+                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">{formIsJewellery ? "Material" : "Fabric"}</label>
                 <input required value={form.fabric} onChange={(event) => setForm((current) => ({ ...current, fabric: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
               </div>
               <div>

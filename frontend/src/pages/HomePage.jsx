@@ -6,12 +6,14 @@ import api from "../services/api";
 import heroBanner from "../assets/hero-banner.png";
 import catSilk from "../assets/category-silk.png";
 import catWedding from "../assets/category-wedding.png";
+import { JEWELLERY_CATEGORY } from "../utils/catalog";
 
 export default function HomePage() {
   const [homeFeed, setHomeFeed] = useState({
     newArrivals: [],
     trending: [],
-    recommended: []
+    recommended: [],
+    jewellerySpotlight: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +28,8 @@ export default function HomePage() {
     { name: "Silk", img: catSilk, slug: "Silk" },
     { name: "Wedding Sarees", img: catWedding, slug: "Wedding Sarees" },
     { name: "Cotton", img: catSilk, slug: "Cotton" },
-    { name: "Paithani", img: catWedding, slug: "Paithani" }
+    { name: "Paithani", img: catWedding, slug: "Paithani" },
+    { name: JEWELLERY_CATEGORY, img: heroBanner, slug: JEWELLERY_CATEGORY }
   ];
 
   return (
@@ -89,7 +92,7 @@ export default function HomePage() {
             </svg>
           </Link>
         </div>
-        <div className="mt-12 grid grid-cols-2 gap-4 sm:mt-16 sm:gap-8 lg:grid-cols-4">
+        <div className="mt-12 grid grid-cols-2 gap-4 sm:mt-16 sm:gap-8 lg:grid-cols-5">
           {categories.map((category, i) => (
             <motion.div
               key={category.name}
@@ -113,6 +116,52 @@ export default function HomePage() {
               </Link>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      <section className="mx-auto mt-24 max-w-7xl px-6 sm:mt-32 sm:px-8">
+        <div className="overflow-hidden rounded-[3rem] bg-[radial-gradient(circle_at_top_left,_rgba(252,211,77,0.22),_transparent_32%),linear-gradient(135deg,_#1f1712,_#3a2419_50%,_#6a3a20)] px-8 py-12 text-white shadow-2xl shadow-amber-200/40 sm:px-12 sm:py-16">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-[10px] font-black uppercase tracking-[0.45em] text-amber-300">New Section</p>
+              <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl">Imitation Jewellery Studio</h2>
+              <p className="mt-5 text-sm font-medium leading-relaxed text-stone-200 sm:text-base">
+                Discover statement necklaces, earrings, bangles, and festive finishing pieces in a dedicated showcase separate from the saree collection.
+              </p>
+            </div>
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <Link
+                to={`/shop?category=${encodeURIComponent(JEWELLERY_CATEGORY)}`}
+                className="inline-flex items-center justify-center rounded-2xl bg-white px-8 py-4 text-xs font-black uppercase tracking-[0.25em] text-stone-900 transition-all hover:bg-amber-50"
+              >
+                Explore Jewellery
+              </Link>
+              <Link
+                to="/shop"
+                className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-8 py-4 text-xs font-black uppercase tracking-[0.25em] text-white transition-all hover:bg-white/15"
+              >
+                Browse Full Catalog
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {(loading ? Array.from({ length: 3 }) : homeFeed.jewellerySpotlight.slice(0, 3)).map((product, index) =>
+              loading ? (
+                <div key={index} className="aspect-[4/5] animate-pulse rounded-[2.5rem] bg-white/10" />
+              ) : (
+                <ProductCard key={product._id} product={product} />
+              )
+            )}
+          </div>
+
+          {!loading && homeFeed.jewellerySpotlight.length === 0 && (
+            <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/5 px-6 py-8 text-center">
+              <p className="text-sm font-semibold text-stone-200">
+                This space is ready for the first jewelry drop from the admin catalog.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -141,7 +190,7 @@ export default function HomePage() {
             <div className="space-y-4">
               <p className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-500">Popularity Score</p>
               <h2 className="text-4xl font-black tracking-tighter sm:text-7xl">Trending Stories</h2>
-              <p className="max-w-md text-sm font-medium text-stone-400 sm:text-base">The drapes that are capturing hearts and defining contemporary elegance.</p>
+              <p className="max-w-md text-sm font-medium text-stone-400 sm:text-base">The standout pieces currently capturing attention across sarees and jewelry alike.</p>
             </div>
             <Link to="/shop?sort=trending" className="btn-secondary border-stone-700 bg-transparent text-white hover:bg-stone-800 px-10">Experience Trends</Link>
           </div>

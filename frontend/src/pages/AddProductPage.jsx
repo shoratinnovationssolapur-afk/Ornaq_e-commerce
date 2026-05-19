@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import { categoryOptions, mergeCategories } from "../utils/catalog";
+import { categoryOptions, isJewelleryCategory, mergeCategories } from "../utils/catalog";
 
 export default function AddProductPage() {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ export default function AddProductPage() {
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const categories = useMemo(() => mergeCategories(metadata.categories), [metadata.categories]);
+  const formIsJewellery = isJewelleryCategory(form.category);
 
   useEffect(() => {
     api.get("/products/filters/meta").then((response) => setMetadata(response.data)).catch(() => {});
@@ -83,7 +84,7 @@ export default function AddProductPage() {
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Publishing</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-stone-900 sm:text-5xl">New Creation</h1>
             <p className="mt-4 max-w-xl text-sm font-medium text-stone-500 sm:text-base">
-              Introduce a new artifact to your luxury catalog. Define its essence, set its valuation, and curate its digital presence.
+              Add a new saree or imitation jewellery piece to the catalog, define its details, and curate its storefront presence.
             </p>
           </div>
           <button type="button" onClick={() => navigate(-1)} className="text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-900 transition-colors">
@@ -109,7 +110,7 @@ export default function AddProductPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Narrative Description</label>
-                    <textarea required rows={6} className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-medium leading-relaxed border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Describe the drape, weave history, and occasion..." value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
+                    <textarea required rows={6} className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-medium leading-relaxed border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder={formIsJewellery ? "Describe the finish, styling notes, and occasions to wear it..." : "Describe the drape, weave history, and occasion..."} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
                   </div>
                 </div>
               </div>
@@ -128,8 +129,8 @@ export default function AddProductPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Fabric</label>
-                    <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Silk, Cotton, etc." value={form.fabric} onChange={(event) => setForm((current) => ({ ...current, fabric: event.target.value }))} />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">{formIsJewellery ? "Material" : "Fabric"}</label>
+                    <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder={formIsJewellery ? "Alloy, Brass, Beads, etc." : "Silk, Cotton, etc."} value={form.fabric} onChange={(event) => setForm((current) => ({ ...current, fabric: event.target.value }))} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Primary Color</label>

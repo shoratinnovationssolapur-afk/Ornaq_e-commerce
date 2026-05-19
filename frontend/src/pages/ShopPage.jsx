@@ -5,7 +5,7 @@ import ProductCard from "../components/ProductCard";
 import ShopFilters from "../components/ShopFilters";
 import api from "../services/api";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { cleanFilters, defaultShopFilters, mergeCategories } from "../utils/catalog";
+import { cleanFilters, defaultShopFilters, isJewelleryCategory, JEWELLERY_CATEGORY, mergeCategories } from "../utils/catalog";
 
 const readFilters = (searchParams) => ({
   searchQuery: searchParams.get("searchQuery") || "",
@@ -31,6 +31,12 @@ export default function ShopPage() {
 
   const debouncedSearch = useDebouncedValue(localFilters.searchQuery, 400);
   const categories = useMemo(() => mergeCategories(metadata.categories), [metadata.categories]);
+  const activeCategory = localFilters.category;
+  const browsingJewellery = isJewelleryCategory(activeCategory);
+  const heading = browsingJewellery ? "Imitation Jewellery" : "Curated Treasures";
+  const description = browsingJewellery
+    ? "Browse earrings, necklaces, bangles, and festive finishing pieces in a dedicated jewelry catalog."
+    : "Discover the finest handloom sarees and signature occasionwear curated for every celebration.";
 
   const toggleFilters = () => setIsFilterOpen(!isFilterOpen);
   const closeFilters = () => setIsFilterOpen(false);
@@ -100,15 +106,33 @@ export default function ShopPage() {
             <div className="max-w-2xl">
               <div className="flex items-center gap-2">
                 <span className="h-px w-6 bg-brand-600" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Catalog</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">
+                  {browsingJewellery ? "Jewellery Catalog" : "Catalog"}
+                </p>
               </div>
-              <h1 className="mt-4 text-3xl font-black tracking-tight text-stone-900 sm:text-5xl">Curated Treasures</h1>
-              <p className="mt-4 text-sm font-medium text-stone-500 sm:text-base">
-                Discover the finest handloom sarees, from timeless Silk to exquisite Paithani.
-              </p>
+              <h1 className="mt-4 text-3xl font-black tracking-tight text-stone-900 sm:text-5xl">{heading}</h1>
+              <p className="mt-4 text-sm font-medium text-stone-500 sm:text-base">{description}</p>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleFilterChange("category", "")}
+                className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] transition-all ${
+                  !activeCategory ? "bg-stone-900 text-white shadow-lg" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                }`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("category", JEWELLERY_CATEGORY)}
+                className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] transition-all ${
+                  browsingJewellery ? "bg-amber-500 text-stone-950 shadow-lg shadow-amber-100" : "bg-amber-50 text-amber-800 hover:bg-amber-100"
+                }`}
+              >
+                Jewellery
+              </button>
               <button 
                 onClick={toggleFilters}
                 className="flex items-center gap-2 rounded-2xl bg-stone-900 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-xl transition-all hover:bg-stone-800 active:scale-95 xl:hidden"

@@ -1,6 +1,8 @@
 const defaultProductImage = "https://placehold.co/900x1200/f2e8dc/6f4b3e?text=Ornac";
 
-export const categoryOptions = ["Silk", "Paithani", "Cotton", "Wedding Sarees"];
+export const JEWELLERY_CATEGORY = "Imitation Jewellery";
+
+export const categoryOptions = ["Silk", "Paithani", "Cotton", "Wedding Sarees", JEWELLERY_CATEGORY];
 
 export const sortOptions = [
   { label: "Newest first", value: "newest" },
@@ -47,3 +49,11 @@ export const getProductColors = (product) => {
   if (colors.length) return colors;
   return product?.color ? [product.color] : [];
 };
+
+export const isJewelleryCategory = (category = "") =>
+  String(category).trim().toLowerCase() === JEWELLERY_CATEGORY.toLowerCase();
+
+export const getProductTypeLabel = (productOrCategory) =>
+  isJewelleryCategory(typeof productOrCategory === "string" ? productOrCategory : productOrCategory?.category)
+    ? "Jewellery"
+    : "Saree";
