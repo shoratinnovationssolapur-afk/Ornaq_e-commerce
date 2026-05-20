@@ -24,23 +24,63 @@ export default function HomePage() {
   }, []);
 
   const categories = getHomeCategories(homeFeed.jewellerySpotlight[0]?.images?.[0]?.url);
+  const brandNameParts = [
+    {
+      label: "OR",
+      title: "Ornament",
+      desc: "Rooted in ornament, signalling jewellery, decoration, beauty, and the joy of adornment."
+    },
+    {
+      label: "NA",
+      title: "Nari",
+      desc: "A cultural nod to the Indian woman at the heart of ORNAQ's saree and jewellery collections."
+    },
+    {
+      label: "Q",
+      title: "Quality & Queen",
+      desc: "The Q adds a modern, premium edge and positions every customer as the queen of her own story."
+    }
+  ];
+  const taglineOptions = [
+    "Wear Your Story.",
+    "Where Tradition Meets Grace.",
+    "From Maharashtra, For Every Indian Woman."
+  ];
+  const brandPillars = [
+    {
+      title: "Heritage",
+      desc: "Rooted in Maharashtra's textile and jewellery traditions, from Paithani inspiration to Kolhapuri craft."
+    },
+    {
+      title: "Elegance",
+      desc: "Every piece is curated to help the modern Indian woman feel confident, graceful, and beautiful."
+    },
+    {
+      title: "Convenience",
+      desc: "An online-first destination that brings handpicked sarees and jewellery directly to your door."
+    },
+    {
+      title: "Trust",
+      desc: "Authentic products, transparent pricing, easy returns, and care built one customer at a time."
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-[#fffdf9]">
       {/* Hero Section - High Impact */}
-      <section className="relative h-[90vh] w-full overflow-hidden sm:h-[85vh] lg:h-screen">
+      <section className="relative h-[90vh] w-full overflow-hidden sm:h-[85vh] lg:h-[94vh]">
         <motion.img 
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
           transition={{ duration: 2, ease: "easeOut" }}
           src={heroBanner} 
-          alt="Luxury Saree Collection" 
+          alt="ORNAQ occasion wear collection" 
           className="absolute inset-0 h-full w-full object-cover object-center" 
         />
-        <div className="absolute inset-0 bg-stone-900/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/20 to-transparent" />
+        <div className="absolute inset-0 bg-stone-950/45" />
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/25 to-transparent" />
         
-        <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-6 pb-24 sm:px-8 sm:pb-32 lg:pb-40">
+        <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-6 pb-20 sm:px-8 sm:pb-28 lg:pb-32">
           <motion.div 
             initial={{ opacity: 0, y: 30 }} 
             animate={{ opacity: 1, y: 0 }} 
@@ -50,18 +90,18 @@ export default function HomePage() {
             <div className="mb-6 flex items-center gap-4">
               <span className="h-px w-12 bg-brand-500" />
               <span className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-400 sm:text-xs">
-                The Artisan Anthology
+                Maharashtra - India
               </span>
             </div>
             <h1 className="text-5xl font-black leading-[1] tracking-tight text-white sm:text-7xl md:text-8xl lg:text-9xl">
-              Sovereign <br /> <span className="text-brand-400 italic font-serif">Elegance.</span>
+              Wear Your <br /> <span className="text-brand-400 italic font-serif">Story.</span>
             </h1>
             <p className="mt-8 max-w-xl text-lg font-medium leading-relaxed text-stone-300 sm:text-xl">
-              Immerse yourself in the legacy of hand-woven mastery. Handpicked treasures for the modern connoisseur of tradition.
+              The perfect women's saree and jewellery destination, rooted in Maharashtra and curated for every Indian woman.
             </p>
             <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:gap-6">
               <Link to="/shop" className="btn-primary px-12 py-6 text-sm shadow-2xl">
-                Enter Collection
+                Shop Collection
               </Link>
               <Link to="/shop?isNewArrival=true" className="flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-12 py-6 text-sm font-black uppercase tracking-widest text-white backdrop-blur-xl transition-all hover:bg-white/10 active:scale-95">
                 New Arrivals
@@ -71,15 +111,106 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Brand Identity */}
+      <section className="bg-white py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-6 sm:px-8">
+          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.45em] text-brand-700">Brand Identity</p>
+              <h2 className="mt-4 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">ORNAQ means adornment with identity.</h2>
+            </div>
+            <div className="space-y-5 text-sm font-medium leading-relaxed text-stone-600 sm:text-base">
+              <p>
+                ORNAQ is a short, distinctive, and memorable name built from ornament, nari, quality, and queen. It connects sarees and jewellery with culture, beauty, and the personal confidence of the woman wearing them.
+              </p>
+              <p>
+                Born in Maharashtra, ORNAQ brings handpicked collections that blend cultural tradition with modern design for weddings, festivals, gifting, and every precious moment in between.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-12 grid gap-5 md:grid-cols-3">
+            {brandNameParts.map((part) => (
+              <div key={part.label} className="rounded-lg border border-stone-100 bg-[#fffdf9] p-6 shadow-lg shadow-stone-200/40">
+                <p className="text-5xl font-black tracking-tighter text-brand-700">{part.label}</p>
+                <h3 className="mt-5 text-2xl font-black text-stone-900">{part.title}</h3>
+                <p className="mt-3 text-sm font-medium leading-relaxed text-stone-500">{part.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-[0.7fr_1.3fr]">
+            <div className="rounded-lg bg-stone-900 p-7 text-white">
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-brand-400">Brand Name Score</p>
+              <p className="mt-6 text-6xl font-black tracking-tighter">8.5/10</p>
+              <p className="mt-4 text-sm font-medium leading-relaxed text-stone-300">
+                Short, pronounceable in Marathi, Hindi, and English, scalable across sarees and jewellery, and memorable for a digital-first brand.
+              </p>
+            </div>
+            <div className="rounded-lg border border-brand-100 bg-brand-50 p-7">
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-brand-700">Brand Voice</p>
+              <h3 className="mt-4 text-3xl font-black tracking-tight text-stone-900">Tagline direction</h3>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {taglineOptions.map((tagline, index) => (
+                  <span key={tagline} className={`rounded-full px-5 py-3 text-xs font-black uppercase tracking-[0.18em] ${index === 0 ? "bg-stone-900 text-white" : "bg-white text-stone-700"}`}>
+                    {tagline}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-6 text-sm font-medium leading-relaxed text-stone-600">
+                "Wear Your Story." is the recommended line because it is short, emotional, and works naturally for both sarees and jewellery.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Brand Copy */}
+      <section className="mx-auto mt-24 max-w-7xl px-6 sm:mt-32 sm:px-8">
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.45em] text-brand-700">Official Brand Copy</p>
+            <h2 className="mt-4 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">From Maharashtra, for every Indian woman.</h2>
+          </div>
+          <div className="rounded-lg border border-stone-100 bg-white p-8 shadow-xl shadow-stone-200/50">
+            <p className="text-lg font-semibold leading-relaxed text-stone-800">
+              ORNAQ is an online destination for Indian women who want to celebrate their beauty through the timeless elegance of sarees and jewellery.
+            </p>
+            <p className="mt-5 text-sm font-medium leading-relaxed text-stone-500 sm:text-base">
+              From the silk drapes of Paithani to the shimmer of everyday jewellery, ORNAQ is where you find pieces that feel like they were made for you.
+            </p>
+            <p className="mt-5 text-sm font-medium leading-relaxed text-stone-500 sm:text-base">
+              We believe a saree is more than fabric. It is memory, identity, and grace woven into six yards. Jewellery is the language a woman speaks when words are not enough.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Brand Pillars */}
+      <section className="mx-auto mt-24 max-w-7xl px-6 sm:mt-32 sm:px-8">
+        <div className="text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.45em] text-brand-700">Core Brand Pillars</p>
+          <h2 className="mt-4 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">Heritage, elegance, convenience, trust.</h2>
+        </div>
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {brandPillars.map((pillar) => (
+            <div key={pillar.title} className="rounded-lg border border-stone-100 bg-white p-6 shadow-lg shadow-stone-200/40">
+              <h3 className="text-2xl font-black text-stone-900">{pillar.title}</h3>
+              <p className="mt-4 text-sm font-medium leading-relaxed text-stone-500">{pillar.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Category Anthology */}
       <section id="collection-categories" className="mx-auto mt-24 max-w-7xl px-6 sm:mt-32 sm:px-8">
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Exploration</p>
-            <h2 className="mt-3 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">The Collection</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">ORNAQ Edit</p>
+            <h2 className="mt-3 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">Stories in Silk</h2>
           </div>
           <Link to="/categories" className="group flex items-center gap-3 text-xs font-black uppercase tracking-widest text-brand-700 transition-colors hover:text-brand-800">
-            View All Series
+            View All Categories
             <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
@@ -161,9 +292,9 @@ export default function HomePage() {
       {/* Fresh Selection */}
       <section className="mx-auto mt-32 max-w-7xl px-6 sm:mt-48 sm:px-8">
         <div className="text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-700">Artisan Fresh</p>
-          <h2 className="mt-4 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">New Artifacts</h2>
-          <p className="mx-auto mt-6 max-w-xl text-sm font-medium text-stone-500 sm:text-base">Witness the latest masterpieces recently added to our sovereign inventory.</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-700">Freshly Added</p>
+          <h2 className="mt-4 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">New Arrivals</h2>
+          <p className="mx-auto mt-6 max-w-xl text-sm font-medium text-stone-500 sm:text-base">The latest pieces for the next chapter in your wardrobe.</p>
         </div>
         <div className="mt-16 grid gap-6 grid-cols-2 sm:mt-20 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           {loading ? (
@@ -183,9 +314,9 @@ export default function HomePage() {
             <div className="space-y-4">
               <p className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-500">Popularity Score</p>
               <h2 className="text-4xl font-black tracking-tighter sm:text-7xl">Trending Stories</h2>
-              <p className="max-w-md text-sm font-medium text-stone-400 sm:text-base">The standout pieces currently capturing attention across sarees and jewelry alike.</p>
+              <p className="max-w-md text-sm font-medium text-stone-400 sm:text-base">The standout pieces currently capturing attention across sarees and jewellery alike.</p>
             </div>
-            <Link to="/shop?sort=trending" className="btn-secondary border-stone-700 bg-transparent text-white hover:bg-stone-800 px-10">Experience Trends</Link>
+            <Link to="/shop?sort=trending" className="btn-secondary border-stone-700 bg-transparent text-white hover:bg-stone-800 px-10">Shop Trends</Link>
           </div>
           <div className="grid gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
             {loading ? (
@@ -203,9 +334,9 @@ export default function HomePage() {
       <section className="mx-auto mt-32 max-w-6xl px-6 sm:mt-48 sm:px-8 pb-32">
         <div className="grid gap-12 rounded-[4rem] border border-stone-100 bg-white p-12 shadow-2xl shadow-stone-200/50 md:grid-cols-3 md:gap-16 md:p-20">
           {[
-            { title: "Artisanal Purity", desc: "Every thread verified for authenticity and weave integrity.", label: "Heritage" },
-            { title: "Sovereign Care", desc: "Dedicated concierge for your drapery needs and aftercare.", label: "Patronage" },
-            { title: "Rapid Logistics", desc: "Pincode-optimized delivery ensuring your attire arrives in 3-5 days.", label: "Execution" }
+            { title: "Occasion Ready", desc: "Curated sarees and finishing pieces for celebrations, gifting, and everyday grace.", label: "Curation" },
+            { title: "Personal Style", desc: "Each piece is chosen to help your look feel like a story only you could wear.", label: "Identity" },
+            { title: "Reliable Delivery", desc: "Pincode-optimized delivery so your order reaches you with care.", label: "Service" }
           ].map((item) => (
             <div key={item.title} className="text-center">
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">{item.label}</p>
