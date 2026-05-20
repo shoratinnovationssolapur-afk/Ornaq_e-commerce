@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import axios from "axios";
 import { StatusCodes } from "http-status-codes";
 import User from "../models/User.js";
 import { sendEmail } from "../services/emailService.js";
@@ -35,6 +36,34 @@ const ensureProvider = (user, provider) => {
 const buildOtpHash = (code) => crypto.createHash("sha256").update(String(code)).digest("hex");
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
+const verifyGoogleCredential = async (credential) => {
+  if (!credential) {
+    throw new Error("Google credential is required.");
+  }
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    throw new Error("Google OAuth is not configured on the server.");
+  }
+
+  const { data } = await axios.get("https://oauth2.googleapis.com/tokeninfo", {
+    params: { id_token: credential },
+    timeout: 5000
+  });
+
+  if (data.aud !== process.env.GOOGLE_CLIENT_ID) {
+    throw new Error("Google credential audience does not match this app.");
+  }
+  if (data.email_verified !== "true" && data.email_verified !== true) {
+    throw new Error("Google email is not verified.");
+  }
+
+  return {
+    email: data.email,
+    name: data.name || data.email,
+    googleId: data.sub,
+    avatar: data.picture || ""
+  };
+};
 
 export const register = async (req, res) => {
   const { name, email, password, phone, role } = req.body;
@@ -157,7 +186,16 @@ export const verifyOtp = async (req, res) => {
 };
 
 export const googleLogin = async (req, res) => {
-  const { email, name, googleId, avatar } = req.body;
+  let { email, name, googleId, avatar } = req.body;
+
+  if (req.body.credential) {
+    try {
+      ({ email, name, googleId, avatar } = await verifyGoogleCredential(req.body.credential));
+    } catch (error) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({ message: error.message || "Google authentication failed." });
+    }
+  }
+
   if (!email || !name) {
     return res.status(StatusCodes.BAD_REQUEST).json({ message: "Google profile data is required." });
   }

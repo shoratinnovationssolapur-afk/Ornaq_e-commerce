@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
 import { useRealtime } from "../hooks/useRealtime";
 import api from "../services/api";
@@ -10,6 +10,7 @@ import { formatCurrency, getProductColors, getProductImage, getProductTypeLabel 
 
 export default function ProductPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { addToCart, markViewed, recentlyViewed } = useStore();
   const [product, setProduct] = useState(null);
   const [discovery, setDiscovery] = useState({
@@ -43,7 +44,10 @@ export default function ProductPage() {
   const productColors = useMemo(() => getProductColors(product), [product]);
   const productTypeLabel = useMemo(() => getProductTypeLabel(product), [product]);
   const activeVariant = useMemo(
-    () => product?.variants?.find((variant) => variant.color === selectedColor) || null,
+    () =>
+      product?.variants?.find(
+        (variant) => String(variant.color).toLowerCase() === String(selectedColor).toLowerCase()
+      ) || null,
     [product, selectedColor]
   );
   const galleryImages = useMemo(() => {
@@ -51,6 +55,11 @@ export default function ProductPage() {
     if (activeVariant?.images?.length) return activeVariant.images;
     return product.images || [];
   }, [product, activeVariant]);
+
+  useEffect(() => {
+    setActiveImage(galleryImages[0]?.url || "");
+  }, [galleryImages]);
+
   const recentlyViewedOthers = useMemo(
     () => recentlyViewed.filter((item) => item.slug !== slug).slice(0, 4),
     [recentlyViewed, slug]
@@ -65,6 +74,11 @@ export default function ProductPage() {
     } finally {
       setCheckingPincode(false);
     }
+  };
+
+  const buyNow = async () => {
+    await addToCart(product, 1, selectedColor);
+    navigate("/checkout");
   };
 
   if (!product) {
@@ -199,6 +213,14 @@ export default function ProductPage() {
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
+              </button>
+
+              <button
+                type="button"
+                onClick={buyNow}
+                className="w-full rounded-full border-2 border-stone-900 bg-white px-6 py-5 text-lg font-black text-stone-900 shadow-xl shadow-stone-100 transition-all hover:bg-stone-900 hover:text-white active:scale-95"
+              >
+                Buy Now
               </button>
 
               <div className="rounded-3xl bg-zinc-900 p-6 text-white shadow-2xl">

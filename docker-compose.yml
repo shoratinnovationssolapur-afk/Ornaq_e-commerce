@@ -9,7 +9,12 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:5000/api
+        VITE_SOCKET_URL: http://localhost:5000
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-439706206780-ijguhjttgfboes0b78k3cpr3snvooc7p.apps.googleusercontent.com}
     ports:
       - "4173:4173"
     environment:

@@ -24,9 +24,21 @@ export default function AddProductPage() {
     isNewArrival: true
   });
   const [files, setFiles] = useState([]);
+  const [variantFiles, setVariantFiles] = useState({});
   const [previews, setPreviews] = useState([]);
   const categories = useMemo(() => mergeCategories(metadata.categories), [metadata.categories]);
   const formIsJewellery = isJewelleryCategory(form.category);
+  const variantColors = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [form.color, ...form.colorsInput.split(",")]
+            .map((item) => item.trim())
+            .filter(Boolean)
+        )
+      ),
+    [form.color, form.colorsInput]
+  );
 
   useEffect(() => {
     api.get("/products/filters/meta").then((response) => setMetadata(response.data)).catch(() => {});
@@ -38,25 +50,45 @@ export default function AddProductPage() {
     setPreviews(selectedFiles.map((file) => URL.createObjectURL(file)));
   };
 
+  const handleVariantFileChange = (color, event) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    setVariantFiles((current) => ({ ...current, [color]: selectedFiles }));
+  };
+
+  const uploadProductImages = async (imageFiles) => {
+    if (!imageFiles.length) return [];
+
+    const formData = new FormData();
+    imageFiles.forEach((file) => formData.append("images", file));
+    const uploadResponse = await api.post("/uploads/products", formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+    return uploadResponse.data;
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     setError("");
     setSubmitting(true);
     try {
-      let images = [];
-      if (files.length) {
-        const formData = new FormData();
-        files.forEach((file) => formData.append("images", file));
-        const uploadResponse = await api.post("/uploads/products", formData, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
-        images = uploadResponse.data;
-      }
+      const images = await uploadProductImages(files);
 
       const colors = form.colorsInput
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean);
+      const allColors = Array.from(new Set([form.color || colors[0] || "", ...colors].filter(Boolean)));
+      const variants = await Promise.all(
+        allColors.map(async (color, index) => {
+          const variantImages = await uploadProductImages(variantFiles[color] || []);
+          return {
+            color,
+            stock: Math.max(0, Math.ceil(Number(form.stock || 0) / Math.max(1, allColors.length))),
+            sku: `${form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "product"}-${index + 1}`,
+            images: variantImages.length ? variantImages : images
+          };
+        })
+      );
 
       await api.post("/products", {
         ...form,
@@ -65,7 +97,8 @@ export default function AddProductPage() {
         price: Number(form.price),
         discountPercent: Number(form.discountPercent || 0),
         stock: Number(form.stock),
-        images
+        images,
+        variants
       });
 
       navigate("/admin/products");
@@ -191,6 +224,25 @@ export default function AddProductPage() {
                       {previews.map((src, index) => (
                         <div key={index} className="aspect-[3/4] overflow-hidden rounded-xl bg-stone-50">
                           <img src={src} alt="Preview" className="h-full w-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {variantColors.length > 0 && (
+                    <div className="space-y-4 border-t border-stone-100 pt-6">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Color-specific images</p>
+                      {variantColors.map((color) => (
+                        <div key={color} className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: color.toLowerCase() }} />
+                              <span className="text-sm font-black text-stone-700">{color}</span>
+                            </div>
+                            <input type="file" multiple accept="image/*" onChange={(event) => handleVariantFileChange(color, event)} className="max-w-[12rem] text-xs text-stone-500" />
+                          </div>
+                          {variantFiles[color]?.length > 0 && (
+                            <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-brand-700">{variantFiles[color].length} image{variantFiles[color].length === 1 ? "" : "s"} selected</p>
+                          )}
                         </div>
                       ))}
                     </div>

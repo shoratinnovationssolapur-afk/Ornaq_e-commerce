@@ -13,7 +13,6 @@ import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderResultPage from "./pages/OrderResultPage";
-import AdminLoginPage from "./pages/AdminLoginPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
 import ProductManagementPage from "./pages/ProductManagementPage";
 import AddProductPage from "./pages/AddProductPage";
@@ -53,8 +52,8 @@ function AppRoutes() {
           <Route path="/profile/orders" element={<ProtectedRoute><OrderHistoryPage /></ProtectedRoute>} />
           <Route path="/profile/orders/:id" element={<ProtectedRoute><OrderTrackingPage /></ProtectedRoute>} />
           <Route path="/track-order/:id" element={<ProtectedRoute><OrderTrackingPage /></ProtectedRoute>} />
-          <Route path="/admin" element={<AdminLoginPage />} />
-          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin" element={<LoginPage initialAccountType="admin" />} />
+          <Route path="/admin/login" element={<LoginPage initialAccountType="admin" />} />
           <Route path="/admin/dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/products" element={<ProtectedRoute adminOnly><ProductManagementPage /></ProtectedRoute>} />
           <Route path="/admin/products/add" element={<ProtectedRoute adminOnly><AddProductPage /></ProtectedRoute>} />

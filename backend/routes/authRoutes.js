@@ -39,7 +39,17 @@ router.post(
 router.post("/login", authLimiter, [body("email").isEmail(), body("password").isLength({ min: 6 })], validateRequest, login);
 router.post("/request-otp", authLimiter, [body("phone").isString().notEmpty()], validateRequest, requestOtp);
 router.post("/verify-otp", authLimiter, [body("phone").isString().notEmpty(), body("otp").isLength({ min: 4 })], validateRequest, verifyOtp);
-router.post("/google", authLimiter, [body("email").isEmail(), body("name").isString().notEmpty()], validateRequest, googleLogin);
+router.post(
+  "/google",
+  authLimiter,
+  [
+    body("credential").optional().isString().notEmpty(),
+    body("email").if(body("credential").not().exists()).isEmail(),
+    body("name").if(body("credential").not().exists()).isString().notEmpty()
+  ],
+  validateRequest,
+  googleLogin
+);
 router.post("/forgot-password", authLimiter, [body("email").isEmail()], validateRequest, forgotPassword);
 router.post(
   "/reset-password",

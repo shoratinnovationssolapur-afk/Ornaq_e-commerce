@@ -29,6 +29,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const defaultOrigins = [
   "https://ornaq-frontend.vercel.app",
   "https://ornaq-frontend-ng6cvkfd8-shindeharsh2121-6097s-projects.vercel.app", // User provided
+  "http://localhost:4173",
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
