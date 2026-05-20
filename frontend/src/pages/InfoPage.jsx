@@ -1,3 +1,5 @@
+import { businessProfile } from "../utils/businessProfile";
+
 const pageContent = {
   "privacy-policy": {
     title: "Privacy Policy",
@@ -51,9 +53,9 @@ const pageContent = {
     title: "Contact",
     eyebrow: "Support",
     paragraphs: [
-      "Reach the ORNAQ team for order help, pincode checks, delivery support, or catalog questions through the shared support channels in the footer.",
-      "Replace this with your final support phone, email, business hours, and escalation details."
-    ]
+      "Reach the ORNAQ team for order help, catalog questions, delivery support, collaborations, or social updates through any of the official channels below."
+    ],
+    showContactDirectory: true
   },
   faq: {
     title: "FAQ",
@@ -67,6 +69,7 @@ const pageContent = {
 
 export default function InfoPage({ slug }) {
   const page = pageContent[slug] || pageContent.disclaimer;
+  const isContactPage = Boolean(page.showContactDirectory);
 
   return (
     <div className="min-h-screen bg-[#fffdf9] pb-20">
@@ -82,6 +85,43 @@ export default function InfoPage({ slug }) {
               {paragraph}
             </p>
           ))}
+
+          {isContactPage && (
+            <>
+              <div className="grid gap-4 pt-2 sm:grid-cols-3">
+                <a href={`mailto:${businessProfile.email}`} className="rounded-[2rem] border border-stone-100 bg-stone-50 px-6 py-6 transition-colors hover:bg-stone-100">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700">Email</p>
+                  <p className="mt-3 text-sm font-bold text-stone-900">{businessProfile.email}</p>
+                </a>
+                <a href={businessProfile.socials.whatsapp} target="_blank" rel="noreferrer" className="rounded-[2rem] border border-stone-100 bg-stone-50 px-6 py-6 transition-colors hover:bg-stone-100">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700">WhatsApp</p>
+                  <p className="mt-3 text-sm font-bold text-stone-900">+91 98229 37198</p>
+                </a>
+                <a href={businessProfile.website} target="_blank" rel="noreferrer" className="rounded-[2rem] border border-stone-100 bg-stone-50 px-6 py-6 transition-colors hover:bg-stone-100">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700">Website</p>
+                  <p className="mt-3 text-sm font-bold text-stone-900">www.ornaq.in</p>
+                </a>
+              </div>
+
+              <div className="rounded-[2.5rem] border border-stone-100 bg-stone-50/60 p-6 sm:p-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-brand-700">Official Channels</p>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  {businessProfile.contactLinks.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      target={item.href.startsWith("mailto:") ? undefined : "_blank"}
+                      rel={item.href.startsWith("mailto:") ? undefined : "noreferrer"}
+                      className="rounded-[1.75rem] border border-white bg-white px-5 py-4 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-stone-200/50"
+                    >
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">{item.label}</p>
+                      <p className="mt-2 text-sm font-bold leading-relaxed text-stone-900">{item.value}</p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

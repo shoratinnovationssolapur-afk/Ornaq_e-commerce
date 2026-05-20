@@ -80,6 +80,18 @@ export default function BusinessFooter() {
                 <p className="text-white font-bold">{businessProfile.phone}</p>
               </div>
               <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Email</span>
+                <a href={`mailto:${businessProfile.email}`} className="font-bold text-white hover:text-brand-400 transition-colors">
+                  {businessProfile.email}
+                </a>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Website</span>
+                <a href={businessProfile.website} target="_blank" rel="noreferrer" className="font-bold text-white hover:text-brand-400 transition-colors">
+                  www.ornaq.in
+                </a>
+              </div>
+              <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Intelligence</span>
                 <p>Managed by {businessProfile.ownerName}</p>
               </div>

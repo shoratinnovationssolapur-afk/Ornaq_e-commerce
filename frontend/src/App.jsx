@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 import AdminNavbar from "./components/AdminNavbar";
 import HomePage from "./pages/HomePage";
 import ShopPage from "./pages/ShopPage";
+import CategoriesPage from "./pages/CategoriesPage";
 import ProductPage from "./pages/ProductPage";
 import CartPage from "./pages/CartPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -37,6 +38,7 @@ function AppRoutes() {
       <main className="pt-16 overflow-x-hidden min-h-screen bg-[#fffdf9]">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/product/:slug" element={<ProductPage />} />
           <Route path="/login" element={<LoginPage />} />

@@ -4,9 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "../components/ProductCard";
 import api from "../services/api";
 import heroBanner from "../assets/hero-banner.png";
-import catSilk from "../assets/category-silk.png";
-import catWedding from "../assets/category-wedding.png";
 import { JEWELLERY_CATEGORY } from "../utils/catalog";
+import { getHomeCategories } from "../utils/homeCategories";
 
 export default function HomePage() {
   const [homeFeed, setHomeFeed] = useState({
@@ -24,13 +23,7 @@ export default function HomePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const categories = [
-    { name: "Silk", img: catSilk, slug: "Silk" },
-    { name: "Wedding Sarees", img: catWedding, slug: "Wedding Sarees" },
-    { name: "Cotton", img: catSilk, slug: "Cotton" },
-    { name: "Paithani", img: catWedding, slug: "Paithani" },
-    { name: JEWELLERY_CATEGORY, img: heroBanner, slug: JEWELLERY_CATEGORY }
-  ];
+  const categories = getHomeCategories(homeFeed.jewellerySpotlight[0]?.images?.[0]?.url);
 
   return (
     <div className="min-h-screen bg-[#fffdf9]">
@@ -79,13 +72,13 @@ export default function HomePage() {
       </section>
 
       {/* Category Anthology */}
-      <section className="mx-auto mt-24 max-w-7xl px-6 sm:mt-32 sm:px-8">
+      <section id="collection-categories" className="mx-auto mt-24 max-w-7xl px-6 sm:mt-32 sm:px-8">
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Exploration</p>
             <h2 className="mt-3 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">The Collection</h2>
           </div>
-          <Link to="/shop" className="group flex items-center gap-3 text-xs font-black uppercase tracking-widest text-brand-700 transition-colors hover:text-brand-800">
+          <Link to="/categories" className="group flex items-center gap-3 text-xs font-black uppercase tracking-widest text-brand-700 transition-colors hover:text-brand-800">
             View All Series
             <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
