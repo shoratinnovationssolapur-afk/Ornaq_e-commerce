@@ -21,14 +21,27 @@ const emptyForm = {
 export default function ProductEditor({ product, categories, onClose, onSaved }) {
   const [form, setForm] = useState(emptyForm);
   const [files, setFiles] = useState([]);
+  const [variantFiles, setVariantFiles] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const categoryList = useMemo(() => mergeCategories(categories), [categories]);
   const formIsJewellery = isJewelleryCategory(form.category);
+  const variantColors = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [form.color, ...form.colorsInput.split(",")]
+            .map((item) => item.trim())
+            .filter(Boolean)
+        )
+      ),
+    [form.color, form.colorsInput]
+  );
 
   useEffect(() => {
     if (!product) {
       setForm(emptyForm);
       setFiles([]);
+      setVariantFiles({});
       return;
     }
 
@@ -49,9 +62,24 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
       isNewArrival: Boolean(product.isNewArrival)
     });
     setFiles([]);
+    setVariantFiles({});
   }, [product]);
 
   if (!product) return null;
+
+  const uploadProductImages = async (imageFiles) => {
+    if (!imageFiles.length) return [];
+
+    const data = new FormData();
+    imageFiles.forEach((file) => data.append("images", file));
+    const uploadResponse = await api.post("/uploads/products", data, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+    return uploadResponse.data;
+  };
+
+  const getExistingVariant = (color) =>
+    product.variants?.find((variant) => String(variant.color).toLowerCase() === String(color).toLowerCase());
 
   const submit = async (event) => {
     event.preventDefault();
@@ -61,18 +89,27 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
       let images = product.images || [];
 
       if (files.length) {
-        const data = new FormData();
-        files.forEach((file) => data.append("images", file));
-        const uploadResponse = await api.post("/uploads/products", data, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
-        images = uploadResponse.data;
+        images = await uploadProductImages(files);
       }
 
       const colors = form.colorsInput
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean);
+      const allColors = Array.from(new Set([form.color || colors[0] || "", ...colors].filter(Boolean)));
+      const variants = await Promise.all(
+        allColors.map(async (color, index) => {
+          const existingVariant = getExistingVariant(color);
+          const uploadedVariantImages = await uploadProductImages(variantFiles[color] || []);
+          return {
+            color,
+            hexCode: existingVariant?.hexCode || "",
+            stock: Number(existingVariant?.stock ?? Math.max(0, Math.ceil(Number(form.stock || 0) / Math.max(1, allColors.length)))),
+            sku: existingVariant?.sku || `${form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "product"}-${index + 1}`,
+            images: uploadedVariantImages.length ? uploadedVariantImages : existingVariant?.images?.length ? existingVariant.images : images
+          };
+        })
+      );
 
       await api.patch(`/products/${product._id}`, {
         ...form,
@@ -81,7 +118,8 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
         price: Number(form.price),
         discountPercent: Number(form.discountPercent || 0),
         stock: Number(form.stock),
-        images
+        images,
+        variants
       });
 
       onSaved();
@@ -95,7 +133,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/50 px-4 py-10 backdrop-blur-sm">
-      <div className="w-full max-w-4xl overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-stone-950/20">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] bg-white shadow-2xl shadow-stone-950/20">
         <div className="flex items-center justify-between border-b border-stone-200 px-6 py-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-stone-400">Edit product</p>
@@ -149,6 +187,30 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
               <img src={files.length ? URL.createObjectURL(files[0]) : getProductImage(product)} alt={product.name} className="h-64 w-full rounded-[1.25rem] object-cover" />
               <input type="file" accept="image/*" multiple onChange={(event) => setFiles(Array.from(event.target.files || []))} className="mt-4 block w-full text-sm text-stone-500" />
             </div>
+
+            {variantColors.length > 0 && (
+              <div className="space-y-3 rounded-[1.5rem] border border-stone-200 bg-white p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Color-specific images</p>
+                {variantColors.map((color) => {
+                  const existingVariant = getExistingVariant(color);
+                  return (
+                    <div key={color} className="rounded-2xl border border-stone-100 bg-stone-50 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: color.toLowerCase() }} />
+                          <span className="text-sm font-bold text-stone-700">{color}</span>
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{existingVariant?.images?.length || 0} saved</span>
+                      </div>
+                      <input type="file" accept="image/*" multiple onChange={(event) => setVariantFiles((current) => ({ ...current, [color]: Array.from(event.target.files || []) }))} className="mt-3 block w-full text-xs text-stone-500" />
+                      {variantFiles[color]?.length > 0 && (
+                        <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-brand-700">{variantFiles[color].length} new image{variantFiles[color].length === 1 ? "" : "s"} selected</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
