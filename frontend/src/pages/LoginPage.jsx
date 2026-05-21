@@ -6,14 +6,14 @@ import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
 
 import {
+  Eye,
+  EyeOff,
   Mail,
   Lock,
   Phone,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-
-import { IoEye, IoEyeOff } from "react-icons/io5";
 
 export default function LoginPage({ initialAccountType }) {
   const navigate = useNavigate();
@@ -352,9 +352,9 @@ export default function LoginPage({ initialAccountType }) {
                   }
                 >
                   {showPassword ? (
-                    <IoEyeOff size={20} />
+                    <EyeOff size={20} />
                   ) : (
-                    <IoEye size={20} />
+                    <Eye size={20} />
                   )}
                 </div>
               </div>
@@ -473,9 +473,9 @@ export default function LoginPage({ initialAccountType }) {
                     }
                   >
                     {showOtp ? (
-                      <IoEyeOff size={20} />
+                      <EyeOff size={20} />
                     ) : (
-                      <IoEye size={20} />
+                      <Eye size={20} />
                     )}
                   </div>
                 </div>

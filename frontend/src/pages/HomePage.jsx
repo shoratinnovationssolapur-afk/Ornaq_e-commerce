@@ -28,36 +28,34 @@ export default function HomePage() {
     {
       label: "OR",
       title: "Ornament",
-      desc: "Rooted in ornament, signalling jewellery, decoration, beauty, and the joy of adornment."
+      desc: "Rooted in ornament, directly signalling jewellery, decoration, and beauty so adornment is the first feeling the name creates."
     },
     {
       label: "NA",
-      title: "Nari",
-      desc: "A cultural nod to the Indian woman at the heart of ORNAQ's saree and jewellery collections."
+      title: "Nari / Naari",
+      desc: "Hidden inside the name, nari means woman in Hindi and Marathi, giving ORNAQ a deeper cultural resonance with its core audience."
     },
     {
       label: "Q",
-      title: "Quality & Queen",
-      desc: "The Q adds a modern, premium edge and positions every customer as the queen of her own story."
+      title: "Quality / Queen",
+      desc: "The Q adds modernity, exclusivity, and edge while positioning every customer as the queen of her own story."
     }
   ];
   const taglineOptions = [
-    "Wear Your Story.",
-    "Where Tradition Meets Grace.",
-    "From Maharashtra, For Every Indian Woman."
+    "Wear Your Story."
   ];
   const brandPillars = [
     {
       title: "Heritage",
-      desc: "Rooted in Maharashtra's textile and jewellery traditions, from Paithani inspiration to Kolhapuri craft."
+      desc: "Rooted in Maharashtra's textile and jewellery traditions, drawing from Paithani, Kolhapuri, and beyond."
     },
     {
       title: "Elegance",
-      desc: "Every piece is curated to help the modern Indian woman feel confident, graceful, and beautiful."
+      desc: "Every piece is curated to make the modern Indian woman feel confident, graceful, and beautiful."
     },
     {
       title: "Convenience",
-      desc: "An online-first destination that brings handpicked sarees and jewellery directly to your door."
+      desc: "Online-first and delivered to your door, with shopping kept simple for the busy Indian woman."
     },
     {
       title: "Trust",
@@ -90,14 +88,14 @@ export default function HomePage() {
             <div className="mb-6 flex items-center gap-4">
               <span className="h-px w-12 bg-brand-500" />
               <span className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-400 sm:text-xs">
-                Maharashtra - India
+                Maharashtra / India
               </span>
             </div>
             <h1 className="text-5xl font-black leading-[1] tracking-tight text-white sm:text-7xl md:text-8xl lg:text-9xl">
               Wear Your <br /> <span className="text-brand-400 italic font-serif">Story.</span>
             </h1>
             <p className="mt-8 max-w-xl text-lg font-medium leading-relaxed text-stone-300 sm:text-xl">
-              The perfect women's saree and jewellery destination, rooted in Maharashtra and curated for every Indian woman.
+              Sarees and jewellery curated for the modern Indian woman, rooted in Maharashtra and delivered across India.
             </p>
             <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:gap-6">
               <Link to="/shop" className="btn-primary px-12 py-6 text-sm shadow-2xl">
@@ -117,14 +115,14 @@ export default function HomePage() {
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.45em] text-brand-700">Brand Identity</p>
-              <h2 className="mt-4 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">ORNAQ means adornment with identity.</h2>
+              <h2 className="mt-4 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">A short name with deep cultural resonance.</h2>
             </div>
             <div className="space-y-5 text-sm font-medium leading-relaxed text-stone-600 sm:text-base">
               <p>
-                ORNAQ is a short, distinctive, and memorable name built from ornament, nari, quality, and queen. It connects sarees and jewellery with culture, beauty, and the personal confidence of the woman wearing them.
+                ORNAQ is a coined brand name: short, distinctive, and memorable. It blends ornament, nari, and quality into one word, connecting sarees and jewellery with beauty, culture, and self-expression.
               </p>
               <p>
-                Born in Maharashtra, ORNAQ brings handpicked collections that blend cultural tradition with modern design for weddings, festivals, gifting, and every precious moment in between.
+                Born in Maharashtra, it is designed to feel premium, easy to remember, and flexible enough to grow across sarees, jewellery, and the wider world of adornment.
               </p>
             </div>
           </div>
@@ -144,7 +142,7 @@ export default function HomePage() {
               <p className="text-[10px] font-black uppercase tracking-[0.35em] text-brand-400">Brand Name Score</p>
               <p className="mt-6 text-6xl font-black tracking-tighter">8.5/10</p>
               <p className="mt-4 text-sm font-medium leading-relaxed text-stone-300">
-                Short, pronounceable in Marathi, Hindi, and English, scalable across sarees and jewellery, and memorable for a digital-first brand.
+                Short, pronounceable in Marathi, Hindi, and English, unique in the market, and visually distinctive for a digital-first brand.
               </p>
             </div>
             <div className="rounded-lg border border-brand-100 bg-brand-50 p-7">
@@ -158,7 +156,7 @@ export default function HomePage() {
                 ))}
               </div>
               <p className="mt-6 text-sm font-medium leading-relaxed text-stone-600">
-                "Wear Your Story." is the recommended line because it is short, emotional, and works naturally for both sarees and jewellery.
+                "Wear Your Story." is the strongest direction because it is short, emotional, and works naturally for both sarees and jewellery.
               </p>
             </div>
           </div>
@@ -175,6 +173,9 @@ export default function HomePage() {
           <div className="rounded-lg border border-stone-100 bg-white p-8 shadow-xl shadow-stone-200/50">
             <p className="text-lg font-semibold leading-relaxed text-stone-800">
               ORNAQ is an online destination for Indian women who want to celebrate their beauty through the timeless elegance of sarees and jewellery.
+            </p>
+            <p className="mt-5 text-sm font-medium leading-relaxed text-stone-500 sm:text-base">
+              Born in Maharashtra, we bring handpicked collections that blend cultural tradition with modern design for weddings, festivals, and every precious moment in between.
             </p>
             <p className="mt-5 text-sm font-medium leading-relaxed text-stone-500 sm:text-base">
               From the silk drapes of Paithani to the shimmer of everyday jewellery, ORNAQ is where you find pieces that feel like they were made for you.
@@ -247,10 +248,10 @@ export default function HomePage() {
         <div className="overflow-hidden rounded-[3rem] bg-[radial-gradient(circle_at_top_left,_rgba(252,211,77,0.22),_transparent_32%),linear-gradient(135deg,_#1f1712,_#3a2419_50%,_#6a3a20)] px-8 py-12 text-white shadow-2xl shadow-amber-200/40 sm:px-12 sm:py-16">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-[10px] font-black uppercase tracking-[0.45em] text-amber-300">New Section</p>
-              <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl">Imitation Jewellery Studio</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.45em] text-amber-300">Jewellery Edit</p>
+              <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl">Jewellery Spotlight</h2>
               <p className="mt-5 text-sm font-medium leading-relaxed text-stone-200 sm:text-base">
-                Discover statement necklaces, earrings, bangles, and festive finishing pieces in a dedicated showcase separate from the saree collection.
+                Discover necklaces, earrings, bangles, and festive finishing pieces that bring shimmer, grace, and personality to every look.
               </p>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row">
@@ -282,7 +283,7 @@ export default function HomePage() {
           {!loading && homeFeed.jewellerySpotlight.length === 0 && (
             <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/5 px-6 py-8 text-center">
               <p className="text-sm font-semibold text-stone-200">
-                This space is ready for the first jewelry drop from the admin catalog.
+                This showcase is ready for the first jewellery drop from the catalog.
               </p>
             </div>
           )}
@@ -294,7 +295,7 @@ export default function HomePage() {
         <div className="text-center">
           <p className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-700">Freshly Added</p>
           <h2 className="mt-4 text-4xl font-black tracking-tighter text-stone-900 sm:text-6xl">New Arrivals</h2>
-          <p className="mx-auto mt-6 max-w-xl text-sm font-medium text-stone-500 sm:text-base">The latest pieces for the next chapter in your wardrobe.</p>
+          <p className="mx-auto mt-6 max-w-xl text-sm font-medium text-stone-500 sm:text-base">Fresh additions for weddings, festive dressing, gifting, and everyday grace.</p>
         </div>
         <div className="mt-16 grid gap-6 grid-cols-2 sm:mt-20 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           {loading ? (
@@ -314,7 +315,7 @@ export default function HomePage() {
             <div className="space-y-4">
               <p className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-500">Popularity Score</p>
               <h2 className="text-4xl font-black tracking-tighter sm:text-7xl">Trending Stories</h2>
-              <p className="max-w-md text-sm font-medium text-stone-400 sm:text-base">The standout pieces currently capturing attention across sarees and jewellery alike.</p>
+              <p className="max-w-md text-sm font-medium text-stone-400 sm:text-base">The sarees and jewellery our shoppers are turning to for celebrations, gifting, and standout dressing.</p>
             </div>
             <Link to="/shop?sort=trending" className="btn-secondary border-stone-700 bg-transparent text-white hover:bg-stone-800 px-10">Shop Trends</Link>
           </div>
@@ -334,9 +335,9 @@ export default function HomePage() {
       <section className="mx-auto mt-32 max-w-6xl px-6 sm:mt-48 sm:px-8 pb-32">
         <div className="grid gap-12 rounded-[4rem] border border-stone-100 bg-white p-12 shadow-2xl shadow-stone-200/50 md:grid-cols-3 md:gap-16 md:p-20">
           {[
-            { title: "Occasion Ready", desc: "Curated sarees and finishing pieces for celebrations, gifting, and everyday grace.", label: "Curation" },
-            { title: "Personal Style", desc: "Each piece is chosen to help your look feel like a story only you could wear.", label: "Identity" },
-            { title: "Reliable Delivery", desc: "Pincode-optimized delivery so your order reaches you with care.", label: "Service" }
+            { title: "Occasion Ready", desc: "Handpicked sarees and jewellery for weddings, festivals, gifting, and graceful everyday dressing.", label: "Curation" },
+            { title: "Made to Feel Personal", desc: "Every piece is chosen to help the woman wearing it feel adorned in a way that feels true to her.", label: "Identity" },
+            { title: "Delivered with Care", desc: "A simple online experience backed by careful delivery, clear pricing, and dependable service.", label: "Service" }
           ].map((item) => (
             <div key={item.title} className="text-center">
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">{item.label}</p>
