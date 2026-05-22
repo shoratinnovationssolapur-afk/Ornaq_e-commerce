@@ -54,7 +54,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#fffdf9] pb-20">
-      <header className="border-b border-stone-100 bg-white/80 backdrop-blur-xl sticky top-16 z-50">
+      <header className="border-b border-stone-100 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Command Center</p>
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto mt-10 max-w-7xl px-6 sm:px-8">
+      <main className="mx-auto mt-12 max-w-7xl px-6 sm:px-8">
         <AdminStats dashboard={dashboard} />
 
         <div className="mt-12 grid gap-8 lg:grid-cols-2">

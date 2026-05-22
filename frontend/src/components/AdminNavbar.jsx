@@ -20,41 +20,41 @@ export default function AdminNavbar() {
   return (
     <>
       <nav className="navbar-base">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
           {/* Logo */}
-          <Link to="/admin/dashboard" className="flex items-center space-x-2" onClick={closeMobileMenu}>
+          <Link to="/admin/dashboard" className="flex shrink-0 items-center space-x-2" onClick={closeMobileMenu}>
             <span className="text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">Admin Panel</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden shrink-0 items-center gap-2 md:flex lg:gap-4">
             <NavLink 
               to="/admin/dashboard" 
-              className={({ isActive }) => `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
+              className={({ isActive }) => `whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
             >
               Dashboard
             </NavLink>
             <NavLink 
               to="/admin/products" 
-              className={({ isActive }) => `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
+              className={({ isActive }) => `whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
             >
               Products
             </NavLink>
             <NavLink 
               to="/admin/products/add" 
-              className={({ isActive }) => `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
+              className={({ isActive }) => `whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
             >
               Add Product
             </NavLink>
             <NavLink 
               to="/profile/orders" 
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
+              className="whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
             >
               Orders
             </NavLink>
             <button
               onClick={handleLogout}
-              className="ml-2 px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all shadow-sm"
+              className="ml-2 whitespace-nowrap px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all shadow-sm"
             >
               Logout
             </button>
