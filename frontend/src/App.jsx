@@ -16,6 +16,7 @@ import OrderResultPage from "./pages/OrderResultPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
 import ProductManagementPage from "./pages/ProductManagementPage";
 import AddProductPage from "./pages/AddProductPage";
+import AdminOrdersPage from "./pages/AdminOrdersPage";
 import BusinessFooter from "./components/BusinessFooter";
 import OrderHistoryPage from "./pages/OrderHistoryPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -57,6 +58,7 @@ function AppRoutes() {
           <Route path="/admin/dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/products" element={<ProtectedRoute adminOnly><ProductManagementPage /></ProtectedRoute>} />
           <Route path="/admin/products/add" element={<ProtectedRoute adminOnly><AddProductPage /></ProtectedRoute>} />
+          <Route path="/admin/orders" element={<ProtectedRoute adminOnly><AdminOrdersPage /></ProtectedRoute>} />
           <Route path="/privacy-policy" element={<InfoPage slug="privacy-policy" />} />
           <Route path="/terms-and-conditions" element={<InfoPage slug="terms-and-conditions" />} />
           <Route path="/refund-policy" element={<InfoPage slug="refund-policy" />} />
