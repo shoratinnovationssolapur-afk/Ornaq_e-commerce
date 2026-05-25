@@ -36,6 +36,7 @@ export default function AdminNavbar() {
             </NavLink>
             <NavLink 
               to="/admin/products" 
+              end
               className={({ isActive }) => `whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
             >
               Products
@@ -47,8 +48,8 @@ export default function AdminNavbar() {
               Add Product
             </NavLink>
             <NavLink 
-              to="/profile/orders" 
-              className="whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
+              to="/admin/orders" 
+              className={({ isActive }) => `whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
             >
               Orders
             </NavLink>
@@ -112,7 +113,7 @@ export default function AdminNavbar() {
                   <NavLink to="/admin/dashboard" className="nav-link" onClick={closeMobileMenu}>
                     Dashboard
                   </NavLink>
-                  <NavLink to="/admin/products" className="nav-link" onClick={closeMobileMenu}>
+                  <NavLink to="/admin/products" end className="nav-link" onClick={closeMobileMenu}>
                     Product Management
                   </NavLink>
                   <NavLink to="/admin/products/add" className="nav-link" onClick={closeMobileMenu}>
@@ -121,7 +122,7 @@ export default function AdminNavbar() {
                   
                   <div className="mt-6">
                     <p className="px-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Storefront</p>
-                    <NavLink to="/profile/orders" className="nav-link" onClick={closeMobileMenu}>
+                    <NavLink to="/admin/orders" className="nav-link" onClick={closeMobileMenu}>
                       View All Orders
                     </NavLink>
                     <NavLink to="/" className="nav-link text-brand-700 font-bold" onClick={closeMobileMenu}>
