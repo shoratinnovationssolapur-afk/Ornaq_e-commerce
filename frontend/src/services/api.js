@@ -13,10 +13,10 @@ const resolveApiBaseUrl = () => {
   }
 
   if (import.meta.env.DEV) {
-    return "http://localhost:5000/api";
+    return "https://api.ornaq.in/api";
   }
 
-  return "https://ornaq-backend-j3eg.onrender.com/api";
+  return "https://api.ornaq.in/api";
 };
 
 const api = axios.create({

@@ -17,10 +17,10 @@ const resolveSocketUrl = () => {
   }
 
   if (import.meta.env.DEV) {
-    return "http://localhost:5000";
+    return "https://api.ornaq.in/";
   }
 
-  return "https://ornaq-backend-j3eg.onrender.com";
+  return "https://api.ornaq.in/";
 };
 
 export const socket = io(resolveSocketUrl(), {
