@@ -187,6 +187,8 @@ const buildProductPayload = (body, previousProduct) => {
     discountPrice: calculateDiscountPrice(price, discount),
     stock: computedStock,
     images,
+    sareeCode: normalizeString(body.sareeCode) || previousProduct?.sareeCode,
+    youtubeLink: normalizeString(body.youtubeLink) || previousProduct?.youtubeLink || "",
     featured: parseBoolean(body.featured, previousProduct?.featured ?? false),
     isNewArrival,
     newArrivalExpiresAt:
@@ -466,4 +468,18 @@ export const getProductDiscoveryFeed = async (req, res) => {
   const discovery = await getProductDiscovery(req.params.id);
   if (!discovery) return res.status(StatusCodes.NOT_FOUND).json({ message: "Product not found" });
   res.json(discovery);
+};
+
+export const getProductBySareeCode = async (req, res) => {
+   const product = await Product.findOne({
+      sareeCode: req.params.code
+   }).lean();
+
+   if (!product) {
+      return res.status(404).json({
+         message: "Product not found"
+      });
+   }
+
+   res.json(formatProduct(product));
 };

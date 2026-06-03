@@ -59,10 +59,18 @@ const productSchema = new mongoose.Schema(
       minDays: { type: Number, default: 3, min: 1 },
       maxDays: { type: Number, default: 5, min: 1 }
     },
+     sareeCode: {
+      type: String,
+      unique: true
+   },
+
+   youtubeLink: String,
+   
     serviceablePincodes: [{ type: String }],
     qrCodeUrl: String
   },
-  { timestamps: true }
+  { timestamps: true },
+  
 );
 
 productSchema.index({ createdAt: -1 });
