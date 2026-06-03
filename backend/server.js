@@ -43,7 +43,7 @@ const allowedOrigins = Array.from(
   new Set(
     [
       ...defaultOrigins,
-      ...(process.env.CLIENT_URL || "")
+      ...(process.env.CLIENT_URL || "http://localhost:5173")
         .split(",")
         .map((origin) => origin.trim().replace(/\/+$/, ""))
         .filter(Boolean)
@@ -82,7 +82,7 @@ const buildCorsOptions = () => ({
     "Access-Control-Request-Method",
     "Access-Control-Request-Headers"
   ],
-  exposedHeaders: ["Set-Cookie"]
+  exposedHeaders: ["Set-Cookie", "Content-Disposition", "Content-Type"]
 });
 
 const corsOptions = buildCorsOptions();

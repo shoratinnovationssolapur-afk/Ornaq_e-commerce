@@ -59,17 +59,39 @@ export default function CheckoutPage() {
       return;
     }
 
+    const normalizedAddress = {
+      name: address.name.trim(),
+      phone: address.phone.trim(),
+      line1: address.line1.trim(),
+      line2: address.line2.trim(),
+      city: address.city.trim(),
+      state: address.state.trim(),
+      pincode: address.pincode.trim()
+    };
+
+    if (!/^[0-9]{6}$/.test(normalizedAddress.pincode)) {
+      setError("Enter a valid 6-digit pincode.");
+      return;
+    }
+
+    const orderItems = cart.map((item) => ({
+      product: item._id || item.product?._id || item.product,
+      qty: Number(item.qty) || 0,
+      selectedColor: item.selectedColor || item.color || ""
+    }));
+
+    if (orderItems.some((item) => !item.product || item.qty <= 0)) {
+      setError("Your cart contains invalid items. Please refresh the page and try again.");
+      return;
+    }
+
     setProcessing(true);
     setError("");
     try {
       const res = await api.post("/orders", {
         paymentMethod: paymentMethod === "COD" ? "COD" : "RAZORPAY",
-        items: cart.map((item) => ({
-          product: item._id,
-          qty: item.qty,
-          selectedColor: item.selectedColor || item.color
-        })),
-        shippingAddress: address
+        items: orderItems,
+        shippingAddress: normalizedAddress
       });
 
       if (paymentMethod === "ONLINE") {
@@ -146,9 +168,10 @@ export default function CheckoutPage() {
       }
       navigate("/order-result", { state: res.data });
     } catch (errorResponse) {
-      const message = getApiErrorMessage(errorResponse, "Order failed");
-      const resolvedMessage = errorResponse.message || message;
-      setError(resolvedMessage);
+      const responseData = errorResponse?.response?.data;
+      const message = responseData?.message || getApiErrorMessage(errorResponse, "Order failed");
+      console.error("Order request failed:", errorResponse?.response?.status, responseData || errorResponse);
+      setError(message);
       navigate("/order-result", {
         state: {
           order: null,
@@ -157,7 +180,7 @@ export default function CheckoutPage() {
             paymentStatus: "FAILED",
             transactionId: null
           },
-          message: resolvedMessage
+          message
         }
       });
     } finally {
@@ -226,7 +249,7 @@ export default function CheckoutPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className={`relative flex cursor-pointer flex-col gap-3 rounded-3xl border-2 p-6 transition-all ${paymentMethod === "COD" ? "border-brand-600 bg-brand-50/30" : "border-stone-100 bg-white hover:border-stone-200"}`}>
-                <input type="radio" checked={paymentMethod === "COD"} onChange={() => setPaymentMethod("COD")} className="absolute right-6 top-6 h-5 w-5 text-brand-600 focus:ring-brand-500" />
+                <input name="paymentMethod" type="radio" checked={paymentMethod === "COD"} onChange={() => setPaymentMethod("COD")} className="absolute right-6 top-6 h-5 w-5 text-brand-600 focus:ring-brand-500" />
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-900 text-white">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -236,7 +259,7 @@ export default function CheckoutPage() {
                 <p className="text-xs font-medium text-stone-500">Pay securely when your package arrives at your doorstep.</p>
               </label>
               <label className={`relative flex cursor-pointer flex-col gap-3 rounded-3xl border-2 p-6 transition-all ${paymentMethod === "ONLINE" ? "border-brand-600 bg-brand-50/30" : "border-stone-100 bg-white hover:border-stone-200"}`}>
-                <input type="radio" checked={paymentMethod === "ONLINE"} onChange={() => setPaymentMethod("ONLINE")} className="absolute right-6 top-6 h-5 w-5 text-brand-600 focus:ring-brand-500" />
+                <input name="paymentMethod" type="radio" checked={paymentMethod === "ONLINE"} onChange={() => setPaymentMethod("ONLINE")} className="absolute right-6 top-6 h-5 w-5 text-brand-600 focus:ring-brand-500" />
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-900 text-white">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />

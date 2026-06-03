@@ -10,7 +10,7 @@ const resolveSocketUrl = () => {
     return configuredUrl.replace(/\/+$/, "");
   }
 
-  const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
   if (apiUrl) {
     // Strip trailing "/api" or "/api/" then any trailing slashes
     return apiUrl.replace(/\/api\/?$/, "").replace(/\/+$/, "");
@@ -20,7 +20,7 @@ const resolveSocketUrl = () => {
     return "https://api.ornaq.in/";
   }
 
-  return "https://api.ornaq.in/";
+  return "http://localhost:5000";
 };
 
 export const socket = io(resolveSocketUrl(), {
