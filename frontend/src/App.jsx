@@ -24,6 +24,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
 import InfoPage from "./pages/InfoPage";
 import ToastViewport from "./components/ToastViewport";
+import ProductDetails from "./pages/ProductDetails";
 
 function AppRoutes() {
   const location = useLocation();
@@ -67,6 +68,10 @@ function AppRoutes() {
           <Route path="/disclaimer" element={<InfoPage slug="disclaimer" />} />
           <Route path="/contact" element={<InfoPage slug="contact" />} />
           <Route path="/faq" element={<InfoPage slug="faq" />} />
+          <Route
+            path="/saree/:code"
+            element={<ProductDetails />}
+          />
         </Routes>
         {!showAdminChrome && <BusinessFooter />}
       </main>
