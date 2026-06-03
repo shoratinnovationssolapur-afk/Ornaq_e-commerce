@@ -43,7 +43,7 @@ export default function LoginPage({ initialAccountType }) {
 
   useEffect(() => {
     if (authLoading) return;
-    if (isAdmin) {
+    if (isAdmin && (isAdminLogin || location.pathname.startsWith("/admin"))) {
       navigate(adminRedirectTo, { replace: true });
       return;
     }

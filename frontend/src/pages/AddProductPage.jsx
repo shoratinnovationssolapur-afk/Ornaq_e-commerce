@@ -10,7 +10,9 @@ export default function AddProductPage() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
+    sareeCode: "",
     description: "",
+    youtubeLink: "",
     category: "Silk",
     fabric: "",
     color: "",
@@ -141,6 +143,17 @@ export default function AddProductPage() {
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Artifact Name</label>
                     <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Enter product name..." value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Saree Code</label>
+                    <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Enter saree code..." value={form.sareeCode} onChange={(event) => setForm((current) => ({ ...current, sareeCode: event.target.value }))} />
+                  </div>
+
+                   <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Youtube Link</label>
+                    <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Enter Youtube link..." value={form.youtubeLink} onChange={(event) => setForm((current) => ({ ...current, youtubeLink: event.target.value }))} />
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Narrative Description</label>
                     <textarea required rows={6} className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-medium leading-relaxed border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder={formIsJewellery ? "Describe the finish, styling notes, and occasions to wear it..." : "Describe the drape, weave history, and occasion..."} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />

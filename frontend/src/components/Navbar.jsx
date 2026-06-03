@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "../context/StoreContext";
 import { useAuth } from "../context/AuthContext";
@@ -8,10 +8,11 @@ import { JEWELLERY_CATEGORY } from "../utils/catalog";
 export default function Navbar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [sareeCode, setSareeCode] = useState("");
   const location = useLocation();
   const { user, isAdmin, logout } = useAuth();
   const { cart } = useStore();
-
+  const navigate = useNavigate();
   useEffect(() => {
     setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
   }, [cart]);
@@ -19,6 +20,11 @@ export default function Navbar() {
   const toggleMobileMenu = () => setIsMobileOpen(!isMobileOpen);
 
   const closeMobileMenu = () => setIsMobileOpen(false);
+  const handleSareeSearch = () => {
+    if (!sareeCode.trim()) return;
+
+    navigate(`/saree/${sareeCode}`);
+  };
   const isJewelleryView =
     location.pathname === "/shop" &&
     new URLSearchParams(location.search).get("category") === JEWELLERY_CATEGORY;
@@ -34,29 +40,47 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <NavLink 
-              to="/" 
+            <NavLink
+              to="/"
               className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
               onClick={closeMobileMenu}
             >
               Home
             </NavLink>
-            <NavLink 
-              to="/shop" 
+            <NavLink
+              to="/shop"
               className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
             >
               Shop
             </NavLink>
             <Link
               to={`/shop?category=${encodeURIComponent(JEWELLERY_CATEGORY)}`}
-              className={`px-3 py-2 text-sm font-medium transition-colors ${
-                isJewelleryView ? "text-brand-700 border-b-2 border-brand-700" : "text-zinc-500 hover:text-zinc-900"
-              }`}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${isJewelleryView ? "text-brand-700 border-b-2 border-brand-700" : "text-zinc-500 hover:text-zinc-900"
+                }`}
             >
               Jewellery
             </Link>
-            <NavLink 
-              to="/cart" 
+            <div className="flex items-center border rounded-lg overflow-hidden">
+              <input
+                type="text"
+                placeholder="Saree Code"
+                value={sareeCode}
+                onChange={(e) =>
+                  setSareeCode(e.target.value)
+                }
+                className="px-3 py-1 outline-none text-sm"
+              />
+
+              <button
+                onClick={handleSareeSearch}
+                className="bg-black text-white px-3 py-1 text-sm"
+              >
+                Search
+              </button>
+            </div>
+
+            <NavLink
+              to="/cart"
               className={({ isActive }) => `relative px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
             >
               Cart
@@ -68,27 +92,27 @@ export default function Navbar() {
             </NavLink>
             {user ? (
               <div className="flex items-center space-x-6">
-                <NavLink 
-                  to="/wishlist" 
+                <NavLink
+                  to="/wishlist"
                   className={({ isActive }) => `px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-brand-700' : 'text-stone-500 hover:text-stone-900'}`}
                 >
                   Wishlist
                 </NavLink>
-                <NavLink 
-                  to="/profile" 
+                <NavLink
+                  to="/profile"
                   className={({ isActive }) => `px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-brand-700' : 'text-stone-500 hover:text-stone-900'}`}
                 >
                   Profile
                 </NavLink>
                 {isAdmin && (
-                  <NavLink 
-                    to="/admin/dashboard" 
+                  <NavLink
+                    to="/admin/dashboard"
                     className="px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-brand-600 hover:text-brand-700"
                   >
                     Admin
                   </NavLink>
                 )}
-                <button 
+                <button
                   onClick={logout}
                   className="px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-500 hover:text-red-600 transition-colors"
                 >
@@ -96,8 +120,8 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <NavLink 
-                to="/login" 
+              <NavLink
+                to="/login"
                 className="px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-stone-500 hover:text-stone-900"
               >
                 Sign In
@@ -122,14 +146,14 @@ export default function Navbar() {
       <AnimatePresence>
         {isMobileOpen && (
           <div className="fixed inset-0 z-[200] md:hidden">
-            <motion.div 
+            <motion.div
               className="drawer-overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeMobileMenu}
             />
-            <motion.div 
+            <motion.div
               className="mobile-drawer"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
@@ -140,8 +164,8 @@ export default function Navbar() {
                 <Link to="/" className="text-2xl font-black tracking-tight text-zinc-900" onClick={closeMobileMenu}>
                   ORNAQ
                 </Link>
-                <button 
-                  onClick={closeMobileMenu} 
+                <button
+                  onClick={closeMobileMenu}
                   className="p-2 rounded-full hover:bg-zinc-100 transition-colors"
                   aria-label="Close menu"
                 >
@@ -153,6 +177,29 @@ export default function Navbar() {
 
               <div className="flex-1 overflow-y-auto">
                 <nav className="py-4">
+                  <div className="px-6 mb-4">
+                    <div className="flex border rounded-lg overflow-hidden">
+                      <input
+                        type="text"
+                        placeholder="Enter Saree Code"
+                        value={sareeCode}
+                        onChange={(e) =>
+                          setSareeCode(e.target.value)
+                        }
+                        className="flex-1 px-3 py-2 outline-none"
+                      />
+
+                      <button
+                        onClick={() => {
+                          handleSareeSearch();
+                          closeMobileMenu();
+                        }}
+                        className="bg-black text-white px-4"
+                      >
+                        Go
+                      </button>
+                    </div>
+                  </div>
                   <p className="px-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Navigation</p>
                   <NavLink to="/" className="nav-link" onClick={closeMobileMenu}>
                     <span className="flex-1">Home</span>
@@ -198,8 +245,8 @@ export default function Navbar() {
                             <span className="flex-1">Admin Dashboard</span>
                           </NavLink>
                         )}
-                        <button 
-                          onClick={() => { logout(); closeMobileMenu(); }} 
+                        <button
+                          onClick={() => { logout(); closeMobileMenu(); }}
                           className="nav-link w-full text-left font-bold text-red-500 hover:text-red-600"
                         >
                           Sign Out

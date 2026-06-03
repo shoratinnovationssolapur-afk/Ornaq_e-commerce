@@ -109,6 +109,11 @@ export const login = async (req, res) => {
   if (!user || !(await user.matchPassword(password))) {
     return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid credentials" });
   }
+
+  if (normalizeRole(user.role) !== "user") {
+    return res.status(StatusCodes.FORBIDDEN).json({ message: "You are not a user or invalid credentials" });
+  }
+
   return res.status(StatusCodes.OK).json(buildAuthResponse(user));
 };
 
