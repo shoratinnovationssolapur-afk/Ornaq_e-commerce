@@ -17,7 +17,8 @@ import {
   getSearchSuggestions,
   getTrending,
   updateProduct,
-  updateStock
+  updateStock,
+  getProductBySareeCode
 } from "../controllers/productController.js";
 import { authorize, protect } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
