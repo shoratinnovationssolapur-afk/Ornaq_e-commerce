@@ -84,7 +84,8 @@ const orderSchema = new mongoose.Schema(
     transactionId: String,
     razorpayOrderId: String,
     stripePaymentIntentId: String,
-    estimatedDeliveryAt: Date
+    estimatedDeliveryAt: Date,
+    salesRegisterSyncedAt: Date
   },
   { timestamps: true }
 );

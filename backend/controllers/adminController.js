@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import { getSalesRegisterPath, getSalesRegisterPreview, REGISTER_FILE_NAME } from "../services/salesRegisterService.js";
 import { calculatePopularityScore } from "../utils/productUtils.js";
 
 export const getDashboardStats = async (_req, res) => {
@@ -13,7 +14,8 @@ export const getDashboardStats = async (_req, res) => {
     topSellingProducts,
     orderStatusBreakdown,
     revenueSummary,
-    productAnalytics
+    productAnalytics,
+    salesRegister
   ] = await Promise.all([
     Product.countDocuments(),
     Order.countDocuments(),
@@ -61,7 +63,8 @@ export const getDashboardStats = async (_req, res) => {
       .sort({ popularityScore: -1, views: -1 })
       .limit(8)
       .select("name category fabric images price stock views soldCount analytics isNewArrival")
-      .lean()
+      .lean(),
+    getSalesRegisterPreview()
   ]);
 
   const normalizedProductAnalytics = productAnalytics.map((product) => ({
@@ -80,6 +83,12 @@ export const getDashboardStats = async (_req, res) => {
     dailyRevenue,
     topSellingProducts,
     orderStatusBreakdown,
-    productAnalytics: normalizedProductAnalytics
+    productAnalytics: normalizedProductAnalytics,
+    salesRegister
   });
+};
+
+export const downloadSalesRegister = async (_req, res) => {
+  const registerPath = await getSalesRegisterPath();
+  return res.download(registerPath, REGISTER_FILE_NAME);
 };

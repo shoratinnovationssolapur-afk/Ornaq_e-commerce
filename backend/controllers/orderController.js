@@ -4,7 +4,7 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { sendCustomerNotification } from "../services/notificationService.js";
 import { generateInvoiceBuffer } from "../services/invoiceService.js";
-import { appendOrderToSalesRegister } from "../services/salesRegisterService.js";
+import { syncOrderToSalesRegister } from "../services/salesRegisterService.js";
 import { processPayment } from "../services/payment/paymentService.js";
 import {
   buildInvoiceNumber,
@@ -226,17 +226,11 @@ export const createOrder = async (req, res) => {
     meta: { orderId: String(order._id), status: order.orderStatus }
   });
 
-  appendOrderToSalesRegister({
-    ...order.toObject(),
-    userId: {
-      _id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      phone: req.user.phone
-    }
-  }).catch((error) => {
+  try {
+    await syncOrderToSalesRegister(order);
+  } catch (error) {
     console.error("Sales register update failed:", error.message);
-  });
+  }
 
   return res.status(StatusCodes.CREATED).json({
     order: serializeOrder(order),

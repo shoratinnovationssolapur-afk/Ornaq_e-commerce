@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import Cart from "../models/Cart.js";
 import Order from "../models/Order.js";
 import { createRazorpayGatewayOrder } from "../services/payment/paymentService.js";
+import { syncOrderToSalesRegister } from "../services/salesRegisterService.js";
 import { pushStatus } from "../utils/orderUtils.js";
 import { reduceStockForOrder, serializeOrder } from "./orderController.js";
 
@@ -67,6 +68,11 @@ export const verifyRazorpayPayment = async (req, res) => {
   order.orderStatus = "CONFIRMED";
   order.statusTimeline = pushStatus(order.statusTimeline, "CONFIRMED", "Razorpay payment verified.");
   await order.save();
+  try {
+    await syncOrderToSalesRegister(order);
+  } catch (error) {
+    console.error("Sales register update failed:", error.message);
+  }
   await Cart.findOneAndUpdate({ user: req.user._id }, { $set: { items: [] } });
 
   req.io.to(`user:${req.user._id}`).emit("paymentStatusUpdated", {
