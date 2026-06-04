@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api, { getApiErrorMessage } from "../services/api";
 import { useStore } from "../context/StoreContext";
 import { useNotification } from "../context/NotificationContext";
@@ -27,10 +27,30 @@ const loadRazorpayScript = () =>
   });
 
 export default function CheckoutPage() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const { cart, cartSummary, clearCart } = useStore();
+  const { cart, clearCart } = useStore();
   const { showToast } = useNotification();
   const { user } = useAuth();
+
+  // 1. Isolate items dynamically depending on checkout route state source
+  const directItem = location.state?.directItem;
+  const checkoutItems = useMemo(() => {
+    if (directItem) {
+      // Normalize directItem to match the structure of standard cart array objects
+      return [{
+        _id: directItem.product._id,
+        product: directItem.product,
+        name: directItem.product.name,
+        qty: directItem.quantity,
+        price: directItem.product.price,
+        discountPrice: directItem.product.discountPrice,
+        selectedColor: directItem.selectedColor
+      }];
+    }
+    return cart;
+  }, [directItem, cart]);
+
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
@@ -44,14 +64,21 @@ export default function CheckoutPage() {
     pincode: ""
   });
 
-  const subtotal = useMemo(() => cartSummary.subtotal, [cartSummary]);
+  // 2. Re-calculate subtotals dynamically based on checkoutItems instead of cartSummary
+  const subtotal = useMemo(() => {
+    return checkoutItems.reduce((acc, item) => {
+      const activePrice = item.discountPrice || item.price || 0;
+      return acc + (activePrice * item.qty);
+    }, 0);
+  }, [checkoutItems]);
+
   const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
   const totalAmount = subtotal + shippingFee;
   const hasMissingAddressFields = !address.name || !address.phone || !address.line1 || !address.city || !address.state || !address.pincode;
 
   const placeOrder = async () => {
-    if (!cart.length) {
-      setError("Your cart is empty.");
+    if (!checkoutItems.length) {
+      setError("Your order checkout summary is empty.");
       return;
     }
     if (hasMissingAddressFields) {
@@ -74,14 +101,15 @@ export default function CheckoutPage() {
       return;
     }
 
-    const orderItems = cart.map((item) => ({
+    // 3. Map order payload over checkoutItems, not global cart context
+    const orderItems = checkoutItems.map((item) => ({
       product: item._id || item.product?._id || item.product,
       qty: Number(item.qty) || 0,
       selectedColor: item.selectedColor || item.color || ""
     }));
 
     if (orderItems.some((item) => !item.product || item.qty <= 0)) {
-      setError("Your cart contains invalid items. Please refresh the page and try again.");
+      setError("Your order contains invalid items. Please refresh the page and try again.");
       return;
     }
 
@@ -94,13 +122,11 @@ export default function CheckoutPage() {
         shippingAddress: normalizedAddress
       });
 
-  // Ensure this string value lines up precisely with your backend configuration check
-  if (paymentMethod === "ONLINE") { 
-    const razorpay = res.data?.payment?.razorpay;
-    if (!razorpay?.key || !razorpay?.id) {
-      throw new Error("Razorpay integration handshake skipped. Check backend payment method matching parameters.");
-    }
-    // ... rest of your Razorpay initialization scripts
+      if (paymentMethod === "ONLINE") { 
+        const razorpay = res.data?.payment?.razorpay;
+        if (!razorpay?.key || !razorpay?.id) {
+          throw new Error("Razorpay integration handshake skipped. Check backend payment method matching parameters.");
+        }
 
         await loadRazorpayScript();
         setProcessing(false);
@@ -124,7 +150,8 @@ export default function CheckoutPage() {
             setProcessing(true);
             try {
               const verifyRes = await api.post("/payments/razorpay/verify", paymentResponse);
-              await clearCart();
+              // Only clear persistent global cart if it wasn't a direct single product checkout
+              if (!directItem) await clearCart();
               showToast({
                 title: "Payment successful",
                 message: "Your Razorpay payment was verified and the order is confirmed.",
@@ -161,7 +188,7 @@ export default function CheckoutPage() {
       }
 
       if (res.data?.order?.paymentStatus !== "FAILED") {
-        await clearCart();
+        if (!directItem) await clearCart();
         showToast({
           title: "Order placed successfully",
           message: "You can now track the order timeline from your profile.",
@@ -172,7 +199,6 @@ export default function CheckoutPage() {
     } catch (errorResponse) {
       const responseData = errorResponse?.response?.data;
       const message = responseData?.message || getApiErrorMessage(errorResponse, "Order failed");
-      console.error("Order request failed:", errorResponse?.response?.status, responseData || errorResponse);
       setError(message);
       navigate("/order-result", {
         state: {
@@ -274,17 +300,23 @@ export default function CheckoutPage() {
           </section>
         </div>
 
+        {/* Sidebar Summary Area */}
         <aside className="sticky top-28 h-fit space-y-6">
           <div className="rounded-[2.5rem] border border-stone-100 bg-white p-8 shadow-2xl shadow-stone-200/50">
             <h2 className="text-xl font-black text-stone-900">Order Summary</h2>
             <div className="mt-8 max-h-60 space-y-4 overflow-y-auto pr-2 scrollbar-hide">
-              {cart.map((item) => (
-                <div key={`${item._id}-${item.selectedColor || "default"}`} className="flex justify-between gap-4">
+              {/* 4. Render directly from dynamic checkoutItems */}
+              {checkoutItems.map((item) => (
+                <div key={`${item._id || item.product?._id}-${item.selectedColor || "default"}`} className="flex justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-stone-800">{item.name}</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Qty: {item.qty} {item.selectedColor ? `• ${item.selectedColor}` : ""}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                      Qty: {item.qty} {item.selectedColor ? `• ${item.selectedColor}` : ""}
+                    </p>
                   </div>
-                  <span className="shrink-0 text-sm font-black text-stone-900">{formatCurrency((item.discountPrice || item.price) * item.qty)}</span>
+                  <span className="shrink-0 text-sm font-black text-stone-900">
+                    {formatCurrency((item.discountPrice || item.price) * item.qty)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -314,7 +346,7 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={!cart.length || processing}
+              disabled={!checkoutItems.length || processing}
               className="btn-primary mt-8 w-full py-5 text-lg shadow-2xl disabled:opacity-50"
             >
               Confirm Luxury Order

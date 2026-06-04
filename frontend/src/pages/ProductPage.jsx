@@ -76,9 +76,17 @@ export default function ProductPage() {
     }
   };
 
-  const buyNow = async () => {
-    await addToCart(product, 1, selectedColor);
-    navigate("/checkout");
+const buyNow = () => {
+    // Construct a temporary checkout item structure matching your schema
+    const directCheckoutItem = {
+      product,
+      quantity: 1,
+      selectedColor,
+      isDirectPurchase: true // Custom flag to help your checkout identify it
+    };
+
+    // Safely navigate to checkout and explicitly pass this specific item state
+    navigate("/checkout", { state: { directItem: directCheckoutItem } });
   };
 
   if (!product) {
