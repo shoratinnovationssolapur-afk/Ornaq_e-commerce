@@ -3,9 +3,7 @@ import axios from "axios";
 const trimTrailingSlash = (value = "") => value.replace(/\/+$/, "");
 
 const resolveApiBaseUrl = () => {
-  const configuredUrl =
-    import.meta.env.VITE_API_URL || "http://localhost:5000";
-    
+  const configuredUrl = import.meta.env.VITE_API_URL;
 
   if (configuredUrl) {
     const url = trimTrailingSlash(configuredUrl);
