@@ -17,7 +17,8 @@ import {
   getSearchSuggestions,
   getTrending,
   updateProduct,
-  updateStock
+  updateStock,
+  getProductBySareeCode
 } from "../controllers/productController.js";
 import { authorize, protect } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
@@ -54,5 +55,9 @@ router.patch("/:id", protect, authorize("admin"), updateProduct);
 router.patch("/:id/stock", protect, authorize("admin"), [body("stock").isInt({ min: 0 })], validateRequest, updateStock);
 router.patch("/:id/stock/adjust", protect, authorize("admin"), [body("delta").isInt()], validateRequest, adjustStock);
 router.delete("/:id", protect, authorize("admin"), deleteProduct);
+router.get(
+   "/saree/:code",
+   getProductBySareeCode
+);
 
 export default router;

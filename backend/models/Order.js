@@ -8,7 +8,8 @@ const orderItemSchema = new mongoose.Schema(
     qty: { type: Number, min: 1, default: 1 },
     price: Number,
     selectedColor: String,
-    sku: String
+    sku: String,
+    category: String
   },
   { _id: true }
 );
@@ -83,7 +84,8 @@ const orderSchema = new mongoose.Schema(
     transactionId: String,
     razorpayOrderId: String,
     stripePaymentIntentId: String,
-    estimatedDeliveryAt: Date
+    estimatedDeliveryAt: Date,
+    salesRegisterSyncedAt: Date
   },
   { timestamps: true }
 );

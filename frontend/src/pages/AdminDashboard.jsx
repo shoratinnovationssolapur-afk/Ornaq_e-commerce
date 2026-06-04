@@ -4,6 +4,7 @@ import api from "../services/api";
 import { useRealtime } from "../hooks/useRealtime";
 import AdminStats from "../components/admin/AdminStats";
 import OrderManagement from "../components/admin/OrderManagement";
+import SalesRegisterPanel from "../components/admin/SalesRegisterPanel";
 import { formatCurrency, getProductImage } from "../utils/catalog";
 
 export default function AdminDashboard() {
@@ -17,7 +18,12 @@ export default function AdminDashboard() {
     recentOrders: [],
     dailyRevenue: [],
     topSellingProducts: [],
-    productAnalytics: []
+    productAnalytics: [],
+    salesRegister: {
+      fileName: "order-sales-register.xlsx",
+      updatedAt: null,
+      sheets: []
+    }
   });
   const [orders, setOrders] = useState([]);
   const [orderFilter, setOrderFilter] = useState("");
@@ -185,6 +191,8 @@ export default function AdminDashboard() {
             ))}
           </div>
         </section>
+
+        <SalesRegisterPanel salesRegister={dashboard.salesRegister} />
 
         <div className="mt-12 rounded-[3rem] border border-stone-100 bg-white p-8 shadow-2xl shadow-stone-200/50 sm:p-12">
           {loading ? (

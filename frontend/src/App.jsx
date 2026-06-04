@@ -16,6 +16,7 @@ import OrderResultPage from "./pages/OrderResultPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
 import ProductManagementPage from "./pages/ProductManagementPage";
 import AddProductPage from "./pages/AddProductPage";
+import AdminOrdersPage from "./pages/AdminOrdersPage";
 import BusinessFooter from "./components/BusinessFooter";
 import OrderHistoryPage from "./pages/OrderHistoryPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -23,6 +24,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
 import InfoPage from "./pages/InfoPage";
 import ToastViewport from "./components/ToastViewport";
+import ProductDetails from "./pages/ProductDetails";
 
 function AppRoutes() {
   const location = useLocation();
@@ -57,6 +59,7 @@ function AppRoutes() {
           <Route path="/admin/dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/products" element={<ProtectedRoute adminOnly><ProductManagementPage /></ProtectedRoute>} />
           <Route path="/admin/products/add" element={<ProtectedRoute adminOnly><AddProductPage /></ProtectedRoute>} />
+          <Route path="/admin/orders" element={<ProtectedRoute adminOnly><AdminOrdersPage /></ProtectedRoute>} />
           <Route path="/privacy-policy" element={<InfoPage slug="privacy-policy" />} />
           <Route path="/terms-and-conditions" element={<InfoPage slug="terms-and-conditions" />} />
           <Route path="/refund-policy" element={<InfoPage slug="refund-policy" />} />
@@ -65,6 +68,10 @@ function AppRoutes() {
           <Route path="/disclaimer" element={<InfoPage slug="disclaimer" />} />
           <Route path="/contact" element={<InfoPage slug="contact" />} />
           <Route path="/faq" element={<InfoPage slug="faq" />} />
+          <Route
+            path="/saree/:code"
+            element={<ProductDetails />}
+          />
         </Routes>
         {!showAdminChrome && <BusinessFooter />}
       </main>

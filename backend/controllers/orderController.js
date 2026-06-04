@@ -4,6 +4,7 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { sendCustomerNotification } from "../services/notificationService.js";
 import { generateInvoiceBuffer } from "../services/invoiceService.js";
+import { syncOrderToSalesRegister } from "../services/salesRegisterService.js";
 import { processPayment } from "../services/payment/paymentService.js";
 import {
   buildInvoiceNumber,
@@ -139,6 +140,7 @@ export const createOrder = async (req, res) => {
       qty: item.qty,
       name: product.name,
       price: effectivePrice,
+      category: product.category,
       image: product.images?.[0]?.url || item.image || "",
       selectedColor,
       sku:
@@ -223,6 +225,12 @@ export const createOrder = async (req, res) => {
     template: "order_placed",
     meta: { orderId: String(order._id), status: order.orderStatus }
   });
+
+  try {
+    await syncOrderToSalesRegister(order);
+  } catch (error) {
+    console.error("Sales register update failed:", error.message);
+  }
 
   return res.status(StatusCodes.CREATED).json({
     order: serializeOrder(order),
@@ -368,16 +376,18 @@ export const reorderOrder = async (req, res) => {
 };
 
 export const getInvoice = async (req, res) => {
-  const order = await Order.findById(resolveOrderId(req)).populate("userId", "name email");
+  const order = await Order.findById(resolveOrderId(req))
+    .populate("userId", "name email phone")
+    .populate("items.product", "category");
   if (!order) return res.status(StatusCodes.NOT_FOUND).json({ message: "Order not found" });
   if (String(order.userId._id) !== String(req.user._id) && String(req.user.role).toLowerCase() !== "admin") {
     return res.status(StatusCodes.FORBIDDEN).json({ message: "Forbidden" });
   }
 
-  const buffer = await generateInvoiceBuffer(order);
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename="${order.invoiceNumber || buildInvoiceNumber(order._id)}.pdf"`);
-  res.send(buffer);
+  const document = await generateInvoiceBuffer(order);
+  res.setHeader("Content-Type", document.contentType);
+  res.setHeader("Content-Disposition", `attachment; filename="${document.fileName}"`);
+  res.send(document.buffer);
 };
 
 export const updateOrderStatus = async (req, res) => {
