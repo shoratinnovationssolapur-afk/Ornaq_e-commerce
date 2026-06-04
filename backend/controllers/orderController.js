@@ -419,10 +419,57 @@ export const updateOrderStatus = async (req, res) => {
     });
   }
 
-  await order.save();
+// ... Keep all your existing stock validations, item calculations, and payment routines exactly as they are ...
 
-  req.io.to(`user:${order.userId._id}`).emit("order:status-updated", serializeOrder(order));
-  req.io.emit("admin:order-updated", serializeOrder(order));
+  try {
+    // Attempt the compilation and database commit
+    await order.save();
 
-  res.json(serializeOrder(order));
+    if (normalizedPaymentMethod === "COD" || order.paymentStatus === "PAID") {
+      await Cart.findOneAndUpdate({ user: req.user._id }, { $set: { items: [] } });
+    }
+
+    /* Socket notifications */
+    req.io.to(`user:${req.user._id}`).emit("orderCreated", serializeOrder(order));
+    req.io.to(`user:${req.user._id}`).emit("paymentStatusUpdated", {
+      orderId: order._id,
+      paymentStatus: order.paymentStatus,
+      transactionId: order.transactionId || null
+    });
+    req.io.emit("order:created", serializeOrder(order));
+
+    /* Dispatches notification updates via worker queue */
+    await notifyOrderUpdate({
+      user: req.user,
+      subject: "Your Ornac order has been placed",
+      message: `Your order ${order.invoiceNumber} has been placed successfully. Total amount: Rs. ${order.totalAmount}.`,
+      template: "order_placed",
+      meta: { orderId: String(order._id), status: order.orderStatus }
+    });
+
+    return res.status(StatusCodes.CREATED).json({
+      order: serializeOrder(order),
+      payment: {
+        paymentMethod: normalizedPaymentMethod,
+        paymentStatus: order.paymentStatus,
+        transactionId: order.transactionId || null,
+        razorpay: paymentResult?.gatewayOrder || null
+      }
+    });
+
+  } catch (dbError) {
+    // 🚨 EXPLICITLY CAPTURE AND PRINT SUB-VAL ERRORS IN NODEMON
+    console.error("\n❌ [CRITICAL ORDER EXCEPTION CRASH]:\n", dbError);
+
+    if (dbError.name === "ValidationError") {
+      const fieldErrors = Object.keys(dbError.errors).map(key => `${key}: ${dbError.errors[key].message}`).join(", ");
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: `Mongoose Constraint Failure -> [ ${fieldErrors} ]`
+      });
+    }
+
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: dbError.message || "An unhandled transaction anomaly occurred during execution."
+    });
+  }
 };

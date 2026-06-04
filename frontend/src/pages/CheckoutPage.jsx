@@ -61,22 +61,26 @@ export default function CheckoutPage() {
 
     setProcessing(true);
     setError("");
-    try {
-      const res = await api.post("/orders", {
-        paymentMethod: paymentMethod === "COD" ? "COD" : "RAZORPAY",
-        items: cart.map((item) => ({
-          product: item._id,
-          qty: item.qty,
-          selectedColor: item.selectedColor || item.color
-        })),
-        shippingAddress: address
-      });
+ // 📍 Around line 54 inside CheckoutPage.jsx
+try {
+const res = await api.post("/orders", {
+  // 🚀 Map "ONLINE" back to "RAZORPAY" for the backend payment processor
+  paymentMethod: paymentMethod === "ONLINE" ? "RAZORPAY" : "COD", 
+  items: cart.map((item) => ({
+    product: item._id,
+    qty: item.qty,
+    selectedColor: item.selectedColor || item.color
+  })),
+  shippingAddress: address
+});
 
-      if (paymentMethod === "ONLINE") {
-        const razorpay = res.data?.payment?.razorpay;
-        if (!razorpay?.key || !razorpay?.id) {
-          throw new Error("Razorpay order was not created.");
-        }
+  // Ensure this string value lines up precisely with your backend configuration check
+  if (paymentMethod === "ONLINE") { 
+    const razorpay = res.data?.payment?.razorpay;
+    if (!razorpay?.key || !razorpay?.id) {
+      throw new Error("Razorpay integration handshake skipped. Check backend payment method matching parameters.");
+    }
+    // ... rest of your Razorpay initialization scripts
 
         await loadRazorpayScript();
         setProcessing(false);
@@ -145,22 +149,23 @@ export default function CheckoutPage() {
         });
       }
       navigate("/order-result", { state: res.data });
-    } catch (errorResponse) {
-      const message = getApiErrorMessage(errorResponse, "Order failed");
-      const resolvedMessage = errorResponse.message || message;
-      setError(resolvedMessage);
-      navigate("/order-result", {
-        state: {
-          order: null,
-          payment: {
-            paymentMethod,
-            paymentStatus: "FAILED",
-            transactionId: null
-          },
-          message: resolvedMessage
-        }
-      });
-    } finally {
+  } catch (errorResponse) {
+  // 🚀 Forcefully pull the exact text from the Express global error handler middleware
+  const detailedServerMessage = errorResponse.response?.data?.message || errorResponse.message || "Order failed";
+  
+  setError(detailedServerMessage);
+  navigate("/order-result", {
+    state: {
+      order: null,
+      payment: {
+        paymentMethod,
+        paymentStatus: "FAILED",
+        transactionId: null
+      },
+      message: detailedServerMessage // 👈 This overrides "Request failed with status code 422" on screen
+    }
+  });
+}finally {
       setProcessing(false);
     }
   };
