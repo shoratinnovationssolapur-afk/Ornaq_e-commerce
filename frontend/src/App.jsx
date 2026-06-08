@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import AdminNavbar from "./components/AdminNavbar";
@@ -38,6 +39,16 @@ function RoleHomeRedirect() {
   return <Navigate to="/profile" replace />;
 }
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname, search]);
+
+  return null;
+}
+
 function AppRoutes() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
@@ -46,6 +57,7 @@ function AppRoutes() {
 
   return (
     <>
+      <ScrollToTop />
       {showAdminChrome ? <AdminNavbar /> : <Navbar />}
       <ToastViewport />
       <main className="pt-16 overflow-x-hidden min-h-screen bg-[#fffdf9]">
