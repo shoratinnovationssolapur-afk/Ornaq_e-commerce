@@ -1,54 +1,9 @@
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import api from "../services/api";
 import { businessProfile } from "../utils/businessProfile";
 
-const pageContent = {
-  "privacy-policy": {
-    title: "Privacy Policy",
-    eyebrow: "Privacy",
-    paragraphs: [
-      "ORNAQ collects account, order, delivery, and communication details only to operate the ecommerce experience, support customer care, and send order updates.",
-      "This is a placeholder legal page for the current build. Replace it with your final legal text before production launch."
-    ]
-  },
-  "terms-and-conditions": {
-    title: "Terms & Conditions",
-    eyebrow: "Terms",
-    paragraphs: [
-      "By placing an order on ORNAQ, customers agree to the pricing, delivery, cancellation, and return policies shown at checkout.",
-      "This is a placeholder page and should be reviewed with final legal-approved terms before launch."
-    ]
-  },
-  "refund-policy": {
-    title: "Refund Policy",
-    eyebrow: "Refunds",
-    paragraphs: [
-      "Refunds for prepaid orders are initiated after cancellation approval or successful return processing according to the order timeline.",
-      "This placeholder text should be replaced with your final policy wording and settlement timelines."
-    ]
-  },
-  "shipping-policy": {
-    title: "Shipping Policy",
-    eyebrow: "Shipping",
-    paragraphs: [
-      "ORNAQ currently uses standard delivery windows of 3 to 5 days for serviceable pincodes, with free shipping above Rs. 999 and Rs. 50 below that threshold.",
-      "This is sample policy content and should be finalized before public release."
-    ]
-  },
-  "cancellation-policy": {
-    title: "Cancellation Policy",
-    eyebrow: "Cancellations",
-    paragraphs: [
-      "Orders may be cancelled before shipment. Once an order has shipped, customers should use the return request workflow instead.",
-      "This is a temporary page and should be updated with your final operational policy."
-    ]
-  },
-  disclaimer: {
-    title: "Disclaimer",
-    eyebrow: "Disclaimer",
-    paragraphs: [
-      "Product colors, weave appearance, and blouse styling may vary slightly due to photography, display settings, and artisan finishing.",
-      "This placeholder disclaimer should be replaced with your final approved brand copy."
-    ]
-  },
+const staticPageContent = {
   contact: {
     title: "Contact",
     eyebrow: "Support",
@@ -57,34 +12,204 @@ const pageContent = {
     ],
     showContactDirectory: true
   },
+  "shipping-policy": {
+    title: "Shipping Policy",
+    eyebrow: "Shipping",
+    paragraphs: [
+      "Shipping timelines, charges, and serviceability may vary by pincode, product type, and courier network availability.",
+      "Please review delivery estimates shown on the product page and at checkout for the most current dispatch commitment."
+    ]
+  },
+  "cancellation-policy": {
+    title: "Cancellation Policy",
+    eyebrow: "Cancellations",
+    paragraphs: [
+      "Orders may be reviewed for cancellation before dispatch. Once an order has shipped, only the approved return or replacement workflow can be used.",
+      "For urgent cancellation requests, contact ORNAQ support as quickly as possible with your order number."
+    ]
+  },
+  disclaimer: {
+    title: "Disclaimer",
+    eyebrow: "Disclaimer",
+    paragraphs: [
+      "Product colors, weave appearance, zari tone, embroidery finish, and blouse styling can vary slightly because of photography, device screens, and handcrafted processes.",
+      "Customers should review product descriptions carefully before placing an order."
+    ]
+  },
   faq: {
     title: "FAQ",
     eyebrow: "Help",
     paragraphs: [
-      "Customers can browse FAQs about delivery timelines, care instructions, payment options, returns, and festive catalog availability here.",
-      "This page currently contains placeholder content and should be expanded with real support answers."
+      "For help with delivery timelines, payment methods, care guidance, or exchange eligibility, please reach out to the ORNAQ support team directly."
     ]
   }
 };
 
-export default function InfoPage({ slug }) {
-  const page = pageContent[slug] || pageContent.disclaimer;
-  const isContactPage = Boolean(page.showContactDirectory);
+const parsePolicyBody = (body = "") =>
+  body
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+      if (!lines.length) return null;
+
+      if (/^##\s+/.test(lines[0])) {
+        return { type: "heading", content: lines[0].replace(/^##\s+/, "") };
+      }
+
+      if (lines.every((line) => /^[-*]\s+/.test(line))) {
+        return {
+          type: "list",
+          ordered: false,
+          items: lines.map((line) => line.replace(/^[-*]\s+/, ""))
+        };
+      }
+
+      if (lines.every((line) => /^\d+\.\s+/.test(line))) {
+        return {
+          type: "list",
+          ordered: true,
+          items: lines.map((line) => line.replace(/^\d+\.\s+/, ""))
+        };
+      }
+
+      return { type: "paragraph", content: lines.join(" ") };
+    })
+    .filter(Boolean);
+
+const formatUpdatedDate = (value) => {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+};
+
+export default function InfoPage({ slug: propSlug }) {
+  const params = useParams();
+  const resolvedSlug = propSlug || params.slug || "contact";
+  const [policy, setPolicy] = useState(null);
+  const [loading, setLoading] = useState(!staticPageContent[resolvedSlug]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (staticPageContent[resolvedSlug]) {
+      setPolicy(null);
+      setLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setLoading(true);
+    api.get(`/policies/${resolvedSlug}`)
+      .then((response) => {
+        if (isMounted) {
+          setPolicy(response.data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setPolicy(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [resolvedSlug]);
+
+  const staticPage = staticPageContent[resolvedSlug];
+  const bodyBlocks = useMemo(() => parsePolicyBody(policy?.body), [policy]);
+  const pageTitle = policy?.title || staticPage?.title || "Information";
+  const pageEyebrow = policy?.eyebrow || staticPage?.eyebrow || "Info";
+  const summary = policy?.summary;
+  const isContactPage = Boolean(staticPage?.showContactDirectory);
 
   return (
     <div className="min-h-screen bg-[#fffdf9] pb-20">
       <div className="mx-auto max-w-4xl px-6 py-10 sm:px-8 sm:py-16">
         <header className="mb-12">
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">{page.eyebrow}</p>
-          <h1 className="mt-3 text-3xl font-black text-stone-900 sm:text-5xl">{page.title}</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">{pageEyebrow}</p>
+          <h1 className="mt-3 text-3xl font-black text-stone-900 sm:text-5xl">{pageTitle}</h1>
+          {policy?.updatedAt && (
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.22em] text-stone-400">
+              Updated {formatUpdatedDate(policy.updatedAt)}
+            </p>
+          )}
         </header>
 
         <div className="space-y-8 rounded-[3rem] border border-stone-100 bg-white p-8 shadow-2xl shadow-stone-200/50 sm:p-12">
-          {page.paragraphs.map((paragraph, idx) => (
+          {loading && (
+            <div className="py-12 text-center">
+              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-brand-200 border-t-brand-700" />
+              <p className="mt-4 text-sm font-bold text-stone-400">Loading page content...</p>
+            </div>
+          )}
+
+          {!loading && policy && (
+            <>
+              {summary && (
+                <div className="rounded-[2.5rem] border border-brand-100 bg-brand-50/70 p-6 sm:p-8">
+                  <p className="text-sm font-semibold leading-relaxed text-stone-700 sm:text-base">{summary}</p>
+                </div>
+              )}
+
+              <div className="space-y-6">
+                {bodyBlocks.map((block, index) => {
+                  if (block.type === "heading") {
+                    return (
+                      <h2 key={index} className="pt-2 text-2xl font-black text-stone-900 sm:text-3xl">
+                        {block.content}
+                      </h2>
+                    );
+                  }
+
+                  if (block.type === "list") {
+                    const ListTag = block.ordered ? "ol" : "ul";
+                    return (
+                      <ListTag
+                        key={index}
+                        className={`space-y-3 pl-5 text-sm font-medium leading-[1.8] text-stone-600 sm:text-base ${
+                          block.ordered ? "list-decimal" : "list-disc"
+                        }`}
+                      >
+                        {block.items.map((item, itemIndex) => (
+                          <li key={`${itemIndex}-${item}`}>{item}</li>
+                        ))}
+                      </ListTag>
+                    );
+                  }
+
+                  return (
+                    <p key={index} className="text-sm font-medium leading-[1.8] text-stone-500 sm:text-base">
+                      {block.content}
+                    </p>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {!loading && !policy && staticPage?.paragraphs?.map((paragraph, idx) => (
             <p key={idx} className="text-sm font-medium leading-[1.8] text-stone-500 sm:text-base">
               {paragraph}
             </p>
           ))}
+
+          {!loading && !policy && !staticPage && (
+            <p className="text-sm font-medium leading-[1.8] text-stone-500 sm:text-base">
+              This page is not available right now.
+            </p>
+          )}
 
           {isContactPage && (
             <>
@@ -95,7 +220,7 @@ export default function InfoPage({ slug }) {
                 </a>
                 <a href={businessProfile.socials.whatsapp} target="_blank" rel="noreferrer" className="rounded-[2rem] border border-stone-100 bg-stone-50 px-6 py-6 transition-colors hover:bg-stone-100">
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700">WhatsApp</p>
-                  <p className="mt-3 text-sm font-bold text-stone-900">+91 98229 37198</p>
+                  <p className="mt-3 text-sm font-bold text-stone-900">{businessProfile.phone}</p>
                 </a>
                 <a href={businessProfile.website} target="_blank" rel="noreferrer" className="rounded-[2rem] border border-stone-100 bg-stone-50 px-6 py-6 transition-colors hover:bg-stone-100">
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700">Website</p>

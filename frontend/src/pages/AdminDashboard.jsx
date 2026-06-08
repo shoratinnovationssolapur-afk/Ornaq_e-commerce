@@ -73,6 +73,9 @@ export default function AdminDashboard() {
             <Link to="/admin/products" className="btn-secondary px-8">
               Catalog
             </Link>
+            <Link to="/admin/policies" className="btn-secondary px-8">
+              Policies
+            </Link>
             <Link to="/admin/products/add" className="btn-primary px-8">
               New Product
             </Link>
