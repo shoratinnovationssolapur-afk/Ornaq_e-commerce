@@ -1,11 +1,10 @@
 import crypto from "crypto";
 import { StatusCodes } from "http-status-codes";
-import Cart from "../models/Cart.js";
 import Order from "../models/Order.js";
 import { createRazorpayGatewayOrder } from "../services/payment/paymentService.js";
 import { syncOrderToSalesRegister } from "../services/salesRegisterService.js";
 import { pushStatus } from "../utils/orderUtils.js";
-import { reduceStockForOrder, serializeOrder } from "./orderController.js";
+import { reduceStockForOrder, removeOrderedItemsFromCart, serializeOrder } from "./orderController.js";
 
 export const createStripeIntent = async (req, res) => {
   res.status(501).json({ message: "Stripe provider placeholder. Use MOCK for now." });
@@ -73,7 +72,7 @@ export const verifyRazorpayPayment = async (req, res) => {
   } catch (error) {
     console.error("Sales register update failed:", error.message);
   }
-  await Cart.findOneAndUpdate({ user: req.user._id }, { $set: { items: [] } });
+  await removeOrderedItemsFromCart(req.user._id, order.items);
 
   req.io.to(`user:${req.user._id}`).emit("paymentStatusUpdated", {
     orderId: order._id,
