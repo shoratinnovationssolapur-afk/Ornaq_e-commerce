@@ -48,6 +48,12 @@ export default function AdminNavbar() {
               Add Product
             </NavLink>
             <NavLink 
+              to="/admin/stories" 
+              className={({ isActive }) => `whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
+            >
+              Stories
+            </NavLink>
+            <NavLink 
               to="/admin/orders" 
               className={({ isActive }) => `whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
             >
@@ -119,13 +125,16 @@ export default function AdminNavbar() {
                   <NavLink to="/admin/products/add" className="nav-link" onClick={closeMobileMenu}>
                     Add New Product
                   </NavLink>
+                  <NavLink to="/admin/stories" className="nav-link" onClick={closeMobileMenu}>
+                    Trending Stories
+                  </NavLink>
                   
                   <div className="mt-6">
                     <p className="px-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Storefront</p>
                     <NavLink to="/admin/orders" className="nav-link" onClick={closeMobileMenu}>
                       View All Orders
                     </NavLink>
-                    <NavLink to="/" className="nav-link text-brand-700 font-bold" onClick={closeMobileMenu}>
+                    <NavLink to="/home" className="nav-link text-brand-700 font-bold" onClick={closeMobileMenu}>
                       Back to Website
                     </NavLink>
                     <button 
