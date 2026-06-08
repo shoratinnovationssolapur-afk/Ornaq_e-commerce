@@ -8,17 +8,19 @@ import { JEWELLERY_CATEGORY } from "../utils/catalog";
 import { getHomeCategories } from "../utils/homeCategories";
 
 export default function HomePage() {
-  const [homeFeed, setHomeFeed] = useState({
+  const defaultHomeFeed = {
     newArrivals: [],
     trending: [],
     recommended: [],
-    jewellerySpotlight: []
-  });
+    jewellerySpotlight: [],
+    stories: []
+  };
+  const [homeFeed, setHomeFeed] = useState(defaultHomeFeed);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api.get("/products/home-feed")
-      .then((response) => setHomeFeed(response.data))
+      .then((response) => setHomeFeed({ ...defaultHomeFeed, ...response.data }))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -41,9 +43,6 @@ export default function HomePage() {
       desc: "The Q adds modernity, exclusivity, and edge while positioning every customer as the queen of her own story."
     }
   ];
-  const taglineOptions = [
-    "Wear Your Story."
-  ];
   const brandPillars = [
     {
       title: "Heritage",
@@ -64,7 +63,8 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#fffdf9]">
+    <div className="home-page min-h-screen bg-[#fffdf9]">
+      <div className="home-animated-bg" aria-hidden="true" />
       {/* Hero Section - High Impact */}
       <section className="relative h-[90vh] w-full overflow-hidden sm:h-[85vh] lg:h-[94vh]">
         <motion.img 
@@ -137,29 +137,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mt-10 grid gap-5 lg:grid-cols-[0.7fr_1.3fr]">
-            <div className="rounded-lg bg-stone-900 p-7 text-white">
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-brand-400">Brand Name Score</p>
-              <p className="mt-6 text-6xl font-black tracking-tighter">8.5/10</p>
-              <p className="mt-4 text-sm font-medium leading-relaxed text-stone-300">
-                Short, pronounceable in Marathi, Hindi, and English, unique in the market, and visually distinctive for a digital-first brand.
-              </p>
-            </div>
-            <div className="rounded-lg border border-brand-100 bg-brand-50 p-7">
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-brand-700">Brand Voice</p>
-              <h3 className="mt-4 text-3xl font-black tracking-tight text-stone-900">Tagline direction</h3>
-              <div className="mt-6 flex flex-wrap gap-3">
-                {taglineOptions.map((tagline, index) => (
-                  <span key={tagline} className={`rounded-full px-5 py-3 text-xs font-black uppercase tracking-[0.18em] ${index === 0 ? "bg-stone-900 text-white" : "bg-white text-stone-700"}`}>
-                    {tagline}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-6 text-sm font-medium leading-relaxed text-stone-600">
-                "Wear Your Story." is the strongest direction because it is short, emotional, and works naturally for both sarees and jewellery.
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -313,19 +290,51 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-6 sm:px-8">
           <div className="mb-16 flex flex-col gap-8 sm:mb-24 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-500">Popularity Score</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-500">Editorial Notes</p>
               <h2 className="text-4xl font-black tracking-tighter sm:text-7xl">Trending Stories</h2>
-              <p className="max-w-md text-sm font-medium text-stone-400 sm:text-base">The sarees and jewellery our shoppers are turning to for celebrations, gifting, and standout dressing.</p>
+              <p className="max-w-md text-sm font-medium text-stone-400 sm:text-base">Fresh styling notes, occasion guides, and brand stories curated by the ORNAQ team.</p>
             </div>
-            <Link to="/shop?sort=trending" className="btn-secondary border-stone-700 bg-transparent text-white hover:bg-stone-800 px-10">Shop Trends</Link>
+            <Link to="/shop" className="btn-secondary border-stone-700 bg-transparent text-white hover:bg-stone-800 px-10">Explore Collection</Link>
           </div>
-          <div className="grid gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
             {loading ? (
                Array.from({ length: 4 }).map((_, i) => (
-                 <div key={i} className="aspect-[3/4] animate-pulse rounded-[2.5rem] bg-stone-800" />
+                 <div key={i} className="aspect-[4/5] animate-pulse rounded-[2.5rem] bg-stone-800" />
                ))
+            ) : homeFeed.stories.length ? (
+              homeFeed.stories.map((story) => (
+                <article key={story._id} className="group overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04]">
+                  <div className="aspect-[4/5] overflow-hidden bg-stone-800">
+                    {story.imageUrl ? (
+                      <img src={story.imageUrl} alt={story.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-stone-800 px-6 text-center text-xs font-black uppercase tracking-[0.3em] text-stone-500">
+                        ORNAQ Story
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-400">{story.author || "ORNAQ"}</p>
+                    <h3 className="mt-3 text-xl font-black leading-tight text-white">{story.title}</h3>
+                    <p className="mt-4 line-clamp-3 text-sm font-medium leading-relaxed text-stone-400">{story.excerpt}</p>
+                    {story.ctaUrl && (
+                      story.ctaUrl.startsWith("http") ? (
+                        <a href={story.ctaUrl} className="mt-6 inline-flex text-[10px] font-black uppercase tracking-[0.25em] text-brand-300 hover:text-white">
+                          {story.ctaLabel || "Read Story"}
+                        </a>
+                      ) : (
+                        <Link to={story.ctaUrl} className="mt-6 inline-flex text-[10px] font-black uppercase tracking-[0.25em] text-brand-300 hover:text-white">
+                          {story.ctaLabel || "Read Story"}
+                        </Link>
+                      )
+                    )}
+                  </div>
+                </article>
+              ))
             ) : (
-              homeFeed.trending.map((product) => <ProductCard key={product._id} product={product} dark />)
+              <div className="col-span-full rounded-[2rem] border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
+                <p className="text-sm font-semibold text-stone-300">Stories added by admin will appear here.</p>
+              </div>
             )}
           </div>
         </div>
