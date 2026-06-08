@@ -40,6 +40,9 @@ export default function LoginPage({ initialAccountType }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const isAdminLogin = accountType === "admin";
+  const userRedirectTo = location.state?.from?.pathname?.startsWith("/admin")
+    ? "/profile"
+    : location.state?.from?.pathname || "/profile";
 
   useEffect(() => {
     if (authLoading) return;
@@ -47,10 +50,18 @@ export default function LoginPage({ initialAccountType }) {
       navigate(adminRedirectTo, { replace: true });
       return;
     }
-    if (user && !isAdminLogin && location.pathname === "/login") {
-      navigate("/", { replace: true });
+    if (isAdmin) {
+      navigate("/admin/dashboard", { replace: true });
+      return;
     }
-  }, [adminRedirectTo, authLoading, isAdmin, isAdminLogin, location.pathname, navigate, user]);
+    if (user && location.pathname.startsWith("/admin")) {
+      navigate("/profile", { replace: true });
+      return;
+    }
+    if (user && location.pathname === "/login") {
+      navigate(userRedirectTo, { replace: true });
+    }
+  }, [adminRedirectTo, authLoading, isAdmin, isAdminLogin, location.pathname, navigate, user, userRedirectTo]);
 
   const selectAccountType = (type) => {
     setAccountType(type);
@@ -71,7 +82,7 @@ export default function LoginPage({ initialAccountType }) {
         setAdminRedirectTo(response.redirectTo || "/admin/dashboard");
       } else {
         await login(form.email, form.password);
-        navigate("/");
+        navigate(userRedirectTo, { replace: true });
       }
     } catch (err) {
       setError(err.response?.data?.message || (isAdminLogin ? "Admin login failed" : "Invalid credentials. Please try again."));
@@ -100,7 +111,7 @@ export default function LoginPage({ initialAccountType }) {
     setLoading(true);
     try {
       await verifyOtp({ phone: form.phone, otp: form.otp });
-      navigate("/");
+      navigate(userRedirectTo, { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Invalid OTP");
     } finally {
@@ -323,7 +334,7 @@ export default function LoginPage({ initialAccountType }) {
                 googleId: payload.sub,
                 avatar: payload.picture || ""
               });
-              navigate("/");
+              navigate(userRedirectTo, { replace: true });
             } catch (err) {
               setError("Login failed");
             } finally {
