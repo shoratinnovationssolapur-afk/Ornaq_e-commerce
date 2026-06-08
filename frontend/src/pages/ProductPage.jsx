@@ -50,6 +50,8 @@ export default function ProductPage() {
       ) || null,
     [product, selectedColor]
   );
+  const availableStock = Number(activeVariant?.stock ?? product?.stock ?? 0);
+  const isOutOfStock = availableStock <= 0;
   const galleryImages = useMemo(() => {
     if (!product) return [];
     if (activeVariant?.images?.length) return activeVariant.images;
@@ -77,6 +79,7 @@ export default function ProductPage() {
   };
 
   const buyNow = () => {
+    if (isOutOfStock) return;
     navigate("/checkout", {
       state: {
         directItem: {
@@ -198,10 +201,12 @@ export default function ProductPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-3xl border border-stone-100 bg-emerald-50/30 p-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-sm font-black text-emerald-800 uppercase tracking-wider">In Stock</p>
+                  <div className={`h-2 w-2 rounded-full ${isOutOfStock ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`} />
+                  <p className={`text-sm font-black uppercase tracking-wider ${isOutOfStock ? "text-red-700" : "text-emerald-800"}`}>
+                    {isOutOfStock ? "Sold Out" : "In Stock"}
+                  </p>
                 </div>
-                <p className="text-2xl font-black text-stone-900">{activeVariant?.stock ?? product.stock} <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">Units left</span></p>
+                <p className="text-2xl font-black text-stone-900">{availableStock} <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">Units left</span></p>
               </div>
 
               <div className="rounded-3xl border border-stone-100 bg-stone-50/50 p-6">
@@ -213,10 +218,11 @@ export default function ProductPage() {
             <div className="space-y-4 pt-4">
               <button 
                 type="button" 
-                onClick={() => addToCart(product, 1, selectedColor)} 
+                onClick={() => addToCart(product, 1, selectedColor)}
+                disabled={isOutOfStock}
                 className="btn-primary w-full shadow-2xl py-5 text-lg"
               >
-                Add to Luxury Bag
+                {isOutOfStock ? "Sold Out" : "Add to Luxury Bag"}
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
@@ -225,9 +231,10 @@ export default function ProductPage() {
               <button
                 type="button"
                 onClick={buyNow}
-                className="w-full rounded-full border-2 border-stone-900 bg-white px-6 py-5 text-lg font-black text-stone-900 shadow-xl shadow-stone-100 transition-all hover:bg-stone-900 hover:text-white active:scale-95"
+                disabled={isOutOfStock}
+                className="w-full rounded-full border-2 border-stone-900 bg-white px-6 py-5 text-lg font-black text-stone-900 shadow-xl shadow-stone-100 transition-all hover:bg-stone-900 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:border-stone-200 disabled:bg-stone-100 disabled:text-stone-400 disabled:hover:bg-stone-100"
               >
-                Buy Now
+                {isOutOfStock ? "Unavailable" : "Buy Now"}
               </button>
 
               <div className="rounded-3xl bg-zinc-900 p-6 text-white shadow-2xl">
