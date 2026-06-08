@@ -14,7 +14,7 @@ const resolveApiBaseUrl = () => {
     return "https://api.ornaq.in/api";
   }
 
-  return "http://localhost:5000/api";
+  return "https://api.ornaq.in/api";
 };
 
 const api = axios.create({
