@@ -42,7 +42,15 @@ export const formatCurrency = (value) =>
     maximumFractionDigits: 0
   }).format(Number(value || 0));
 
-export const getProductImage = (product) => product?.images?.[0]?.url || defaultProductImage;
+export const getProductImage = (product, selectedColor = "") => {
+  const selectedVariant = Array.isArray(product?.variants)
+    ? product.variants.find(
+        (variant) => String(variant.color || "").toLowerCase() === String(selectedColor || "").toLowerCase()
+      )
+    : null;
+
+  return selectedVariant?.images?.[0]?.url || product?.images?.[0]?.url || defaultProductImage;
+};
 
 export const getProductColors = (product) => {
   const colors = Array.isArray(product?.colors) ? product.colors.filter(Boolean) : [];
