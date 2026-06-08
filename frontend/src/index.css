@@ -40,6 +40,109 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .home-page {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .home-page > section {
+    position: relative;
+    z-index: 1;
+  }
+
+  .home-animated-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(
+        115deg,
+        rgba(124, 45, 18, 0.05) 0,
+        rgba(124, 45, 18, 0.05) 1px,
+        transparent 1px,
+        transparent 44px
+      ),
+      repeating-linear-gradient(
+        25deg,
+        rgba(180, 83, 9, 0.04) 0,
+        rgba(180, 83, 9, 0.04) 1px,
+        transparent 1px,
+        transparent 62px
+      ),
+      linear-gradient(180deg, rgba(255, 253, 249, 0.94), rgba(255, 253, 249, 0.98));
+    background-size: 220px 220px, 260px 260px, 100% 100%;
+    animation: homeWeaveDrift 18s linear infinite;
+  }
+
+  .home-animated-bg::before,
+  .home-animated-bg::after {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    opacity: 0.55;
+  }
+
+  .home-animated-bg::before {
+    background:
+      repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent 86px,
+        rgba(234, 179, 8, 0.08) 87px,
+        transparent 89px
+      );
+    animation: homeThreadSlide 24s ease-in-out infinite alternate;
+  }
+
+  .home-animated-bg::after {
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent 0,
+        transparent 120px,
+        rgba(68, 64, 60, 0.035) 121px,
+        transparent 123px
+      );
+    animation: homeThreadFloat 28s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes homeWeaveDrift {
+  from {
+    background-position: 0 0, 0 0, 0 0;
+  }
+  to {
+    background-position: 220px 220px, -260px 260px, 0 0;
+  }
+}
+
+@keyframes homeThreadSlide {
+  from {
+    transform: translateX(-2rem);
+  }
+  to {
+    transform: translateX(2rem);
+  }
+}
+
+@keyframes homeThreadFloat {
+  from {
+    transform: translateY(-1.5rem);
+  }
+  to {
+    transform: translateY(1.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-animated-bg,
+  .home-animated-bg::before,
+  .home-animated-bg::after {
+    animation: none;
+  }
 }
 
 @layer components {
