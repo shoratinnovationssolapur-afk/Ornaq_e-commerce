@@ -25,7 +25,7 @@ export default function BusinessFooter() {
   );
 
   return (
-    <footer className="bg-stone-900 pt-24 pb-12 text-white">
+    <footer className="relative z-10 bg-stone-900 pt-24 pb-12 text-white">
       <div className="mx-auto max-w-7xl px-6 sm:px-8">
         <div className="grid gap-16 border-b border-stone-800 pb-20 lg:grid-cols-12">
           <div className="lg:col-span-4">

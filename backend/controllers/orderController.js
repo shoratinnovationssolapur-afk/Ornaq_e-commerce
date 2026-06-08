@@ -105,6 +105,28 @@ const buildEstimatedDeliveryDate = (products = []) => {
   return estimated;
 };
 
+export const removeOrderedItemsFromCart = async (userId, orderedItems = []) => {
+  const cart = await Cart.findOne({ user: userId });
+  if (!cart) return;
+
+  for (const orderedItem of orderedItems) {
+    const itemIndex = cart.items.findIndex(
+      (cartItem) =>
+        String(cartItem.product) === String(orderedItem.product) &&
+        String(cartItem.selectedColor || "") === String(orderedItem.selectedColor || "")
+    );
+
+    if (itemIndex === -1) continue;
+
+    cart.items[itemIndex].qty -= Number(orderedItem.qty || 0);
+    if (cart.items[itemIndex].qty <= 0) {
+      cart.items.splice(itemIndex, 1);
+    }
+  }
+
+  await cart.save();
+};
+
 export const createOrder = async (req, res) => {
   const { items, shippingAddress, paymentMethod } = req.body;
   const normalizedPaymentMethod = paymentMethod || "COD";
@@ -207,7 +229,7 @@ export const createOrder = async (req, res) => {
 
   await order.save();
   if (normalizedPaymentMethod === "COD" || order.paymentStatus === "PAID") {
-    await Cart.findOneAndUpdate({ user: req.user._id }, { $set: { items: [] } });
+    await removeOrderedItemsFromCart(req.user._id, normalizedItems);
   }
 
   req.io.to(`user:${req.user._id}`).emit("orderCreated", serializeOrder(order));

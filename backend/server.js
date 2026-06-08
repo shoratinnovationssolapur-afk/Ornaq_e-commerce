@@ -20,6 +20,7 @@ import wishlistRoutes from "./routes/wishlistRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import policyRoutes from "./routes/policyRoutes.js";
+import storyRoutes from "./routes/storyRoutes.js";
 
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
@@ -138,6 +139,7 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/policies", policyRoutes);
+app.use("/api/stories", storyRoutes);
 
 /* error handlers */
 app.use(notFound);

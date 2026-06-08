@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api, { getApiErrorMessage } from "../services/api";
 import { useStore } from "../context/StoreContext";
 import { useNotification } from "../context/NotificationContext";
@@ -29,27 +29,27 @@ const loadRazorpayScript = () =>
 export default function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { cart, clearCart } = useStore();
+  const { cart, clearCart, removeOrderedItemsFromCart } = useStore();
   const { showToast } = useNotification();
   const { user } = useAuth();
 
-  // 1. Isolate items dynamically depending on checkout route state source
-  const directItem = location.state?.directItem;
+  const directCheckoutItem = location.state?.directItem || location.state?.buyNowItem;
   const checkoutItems = useMemo(() => {
-    if (directItem) {
-      // Normalize directItem to match the structure of standard cart array objects
-      return [{
-        _id: directItem.product._id,
-        product: directItem.product,
-        name: directItem.product.name,
-        qty: directItem.quantity,
-        price: directItem.product.price,
-        discountPrice: directItem.product.discountPrice,
-        selectedColor: directItem.selectedColor
-      }];
+    if (directCheckoutItem?.product) {
+      return [
+        {
+          ...directCheckoutItem.product,
+          qty: Number(directCheckoutItem.qty || directCheckoutItem.quantity) || 1,
+          selectedColor:
+            directCheckoutItem.selectedColor ||
+            directCheckoutItem.product.color ||
+            directCheckoutItem.product.colors?.[0] ||
+            ""
+        }
+      ];
     }
     return cart;
-  }, [directItem, cart]);
+  }, [directCheckoutItem, cart]);
 
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [processing, setProcessing] = useState(false);
@@ -64,21 +64,21 @@ export default function CheckoutPage() {
     pincode: ""
   });
 
-  // 2. Re-calculate subtotals dynamically based on checkoutItems instead of cartSummary
-  const subtotal = useMemo(() => {
-    return checkoutItems.reduce((acc, item) => {
-      const activePrice = item.discountPrice || item.price || 0;
-      return acc + (activePrice * item.qty);
-    }, 0);
-  }, [checkoutItems]);
-
+  const checkoutSummary = useMemo(
+    () => ({
+      subtotal: checkoutItems.reduce((sum, item) => sum + (item.discountPrice || item.price) * item.qty, 0),
+      quantity: checkoutItems.reduce((sum, item) => sum + item.qty, 0)
+    }),
+    [checkoutItems]
+  );
+  const subtotal = useMemo(() => checkoutSummary.subtotal, [checkoutSummary]);
   const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
   const totalAmount = subtotal + shippingFee;
   const hasMissingAddressFields = !address.name || !address.phone || !address.line1 || !address.city || !address.state || !address.pincode;
 
   const placeOrder = async () => {
     if (!checkoutItems.length) {
-      setError("Your order checkout summary is empty.");
+      setError("Your cart is empty.");
       return;
     }
     if (hasMissingAddressFields) {
@@ -101,7 +101,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // 3. Map order payload over checkoutItems, not global cart context
     const orderItems = checkoutItems.map((item) => ({
       product: item._id || item.product?._id || item.product,
       qty: Number(item.qty) || 0,
@@ -150,8 +149,7 @@ export default function CheckoutPage() {
             setProcessing(true);
             try {
               const verifyRes = await api.post("/payments/razorpay/verify", paymentResponse);
-              // Only clear persistent global cart if it wasn't a direct single product checkout
-              if (!directItem) await clearCart();
+              removeOrderedItemsFromCart(orderItems);
               showToast({
                 title: "Payment successful",
                 message: "Your Razorpay payment was verified and the order is confirmed.",
@@ -188,7 +186,11 @@ export default function CheckoutPage() {
       }
 
       if (res.data?.order?.paymentStatus !== "FAILED") {
-        if (!directItem) await clearCart();
+        if (directCheckoutItem?.product) {
+          removeOrderedItemsFromCart(orderItems);
+        } else {
+          await clearCart();
+        }
         showToast({
           title: "Order placed successfully",
           message: "You can now track the order timeline from your profile.",
@@ -305,9 +307,8 @@ export default function CheckoutPage() {
           <div className="rounded-[2.5rem] border border-stone-100 bg-white p-8 shadow-2xl shadow-stone-200/50">
             <h2 className="text-xl font-black text-stone-900">Order Summary</h2>
             <div className="mt-8 max-h-60 space-y-4 overflow-y-auto pr-2 scrollbar-hide">
-              {/* 4. Render directly from dynamic checkoutItems */}
               {checkoutItems.map((item) => (
-                <div key={`${item._id || item.product?._id}-${item.selectedColor || "default"}`} className="flex justify-between gap-4">
+                <div key={`${item._id}-${item.selectedColor || "default"}`} className="flex justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-stone-800">{item.name}</p>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">

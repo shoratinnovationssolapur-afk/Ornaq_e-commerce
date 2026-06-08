@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import AdminNavbar from "./components/AdminNavbar";
 import HomePage from "./pages/HomePage";
@@ -17,6 +17,7 @@ import OrderTrackingPage from "./pages/OrderTrackingPage";
 import ProductManagementPage from "./pages/ProductManagementPage";
 import AddProductPage from "./pages/AddProductPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
+import AdminStoriesPage from "./pages/AdminStoriesPage";
 import BusinessFooter from "./components/BusinessFooter";
 import OrderHistoryPage from "./pages/OrderHistoryPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -26,6 +27,16 @@ import InfoPage from "./pages/InfoPage";
 import ToastViewport from "./components/ToastViewport";
 import ProductDetails from "./pages/ProductDetails";
 import PolicyManagementPage from "./pages/PolicyManagementPage";
+import { useAuth } from "./context/AuthContext";
+
+function RoleHomeRedirect() {
+  const { user, isAdmin, loading } = useAuth();
+
+  if (loading) return <div className="p-8 text-center text-stone-500">Loading your account...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
+  return <Navigate to="/profile" replace />;
+}
 
 function AppRoutes() {
   const location = useLocation();
@@ -39,7 +50,8 @@ function AppRoutes() {
       <ToastViewport />
       <main className="pt-16 overflow-x-hidden min-h-screen bg-[#fffdf9]">
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<RoleHomeRedirect />} />
+          <Route path="/home" element={<HomePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/product/:slug" element={<ProductPage />} />
@@ -60,6 +72,7 @@ function AppRoutes() {
           <Route path="/admin/dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/products" element={<ProtectedRoute adminOnly><ProductManagementPage /></ProtectedRoute>} />
           <Route path="/admin/products/add" element={<ProtectedRoute adminOnly><AddProductPage /></ProtectedRoute>} />
+          <Route path="/admin/stories" element={<ProtectedRoute adminOnly><AdminStoriesPage /></ProtectedRoute>} />
           <Route path="/admin/orders" element={<ProtectedRoute adminOnly><AdminOrdersPage /></ProtectedRoute>} />
           <Route path="/admin/policies" element={<ProtectedRoute adminOnly><PolicyManagementPage /></ProtectedRoute>} />
           <Route path="/privacy-policy" element={<InfoPage slug="privacy-policy" />} />

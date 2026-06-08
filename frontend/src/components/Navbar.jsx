@@ -28,31 +28,32 @@ export default function Navbar() {
   const isJewelleryView =
     location.pathname === "/shop" &&
     new URLSearchParams(location.search).get("category") === JEWELLERY_CATEGORY;
+  const isShopView = location.pathname === "/shop" && !isJewelleryView;
 
   return (
     <>
       <nav className="navbar-base">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
+          <Link to="/home" className="flex items-center space-x-2" onClick={closeMobileMenu}>
             <span className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">ORNAQ</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <NavLink
-              to="/"
+              to="/home"
               className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
               onClick={closeMobileMenu}
             >
               Home
             </NavLink>
-            <NavLink
+            <Link
               to="/shop"
-              className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${isShopView ? "text-brand-700 border-b-2 border-brand-700" : "text-zinc-500 hover:text-zinc-900"}`}
             >
               Shop
-            </NavLink>
+            </Link>
             <Link
               to={`/shop?category=${encodeURIComponent(JEWELLERY_CATEGORY)}`}
               className={`px-3 py-2 text-sm font-medium transition-colors ${isJewelleryView ? "text-brand-700 border-b-2 border-brand-700" : "text-zinc-500 hover:text-zinc-900"
@@ -94,27 +95,27 @@ export default function Navbar() {
               <div className="flex items-center space-x-6">
                 <NavLink
                   to="/wishlist"
-                  className={({ isActive }) => `px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-brand-700' : 'text-stone-500 hover:text-stone-900'}`}
+                  className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
                 >
                   Wishlist
                 </NavLink>
                 <NavLink
                   to="/profile"
-                  className={({ isActive }) => `px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-brand-700' : 'text-stone-500 hover:text-stone-900'}`}
+                  className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
                 >
                   Profile
                 </NavLink>
                 {isAdmin && (
                   <NavLink
                     to="/admin/dashboard"
-                    className="px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-brand-600 hover:text-brand-700"
+                    className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-brand-600 hover:text-brand-700'}`}
                   >
                     Admin
                   </NavLink>
                 )}
                 <button
                   onClick={logout}
-                  className="px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-500 hover:text-red-600 transition-colors"
+                  className="border-b-2 border-transparent px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:border-red-500 hover:text-red-600"
                 >
                   Sign Out
                 </button>
@@ -122,7 +123,7 @@ export default function Navbar() {
             ) : (
               <NavLink
                 to="/login"
-                className="px-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-stone-500 hover:text-stone-900"
+                className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
               >
                 Sign In
               </NavLink>
@@ -161,7 +162,7 @@ export default function Navbar() {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             >
               <div className="flex items-center justify-between p-6 border-b border-zinc-100">
-                <Link to="/" className="text-2xl font-black tracking-tight text-zinc-900" onClick={closeMobileMenu}>
+                <Link to="/home" className="text-2xl font-black tracking-tight text-zinc-900" onClick={closeMobileMenu}>
                   ORNAQ
                 </Link>
                 <button
@@ -201,18 +202,18 @@ export default function Navbar() {
                     </div>
                   </div>
                   <p className="px-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Navigation</p>
-                  <NavLink to="/" className="nav-link" onClick={closeMobileMenu}>
+                  <NavLink to="/home" className="nav-link" onClick={closeMobileMenu}>
                     <span className="flex-1">Home</span>
                     <svg className="h-5 w-5 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </NavLink>
-                  <NavLink to="/shop" className="nav-link" onClick={closeMobileMenu}>
+                  <Link to="/shop" className={`nav-link ${isShopView ? "bg-brand-50/50 text-brand-700" : ""}`} onClick={closeMobileMenu}>
                     <span className="flex-1">Shop Collection</span>
                     <svg className="h-5 w-5 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                  </NavLink>
+                  </Link>
                   <Link to={`/shop?category=${encodeURIComponent(JEWELLERY_CATEGORY)}`} className="nav-link" onClick={closeMobileMenu}>
                     <span className="flex-1">Imitation Jewellery</span>
                     <svg className="h-5 w-5 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
