@@ -66,7 +66,7 @@ export default function OrderTrackingPage() {
     const response = await api.get(`/orders/${id}/invoice`, { responseType: "blob" });
     const disposition = response.headers["content-disposition"] || "";
     const fileNameMatch = disposition.match(/filename=\"?([^"]+)\"?/i);
-    const fileName = fileNameMatch?.[1] || `invoice-${id}.docx`;
+    const fileName = fileNameMatch?.[1] || `invoice-${id}.pdf`;
     const blob = new Blob([response.data], { type: response.headers["content-type"] || "application/octet-stream" });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
