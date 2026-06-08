@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import Product from "../models/Product.js";
+import Story from "../models/Story.js";
 import { getProductDiscovery } from "../services/recommendationService.js";
 import { isServiceablePincode } from "../utils/serviceability.js";
 import {
@@ -440,21 +441,23 @@ export const getNewArrivals = async (_req, res) => {
 };
 
 export const getHomeFeed = async (_req, res) => {
-  const [newArrivals, trending, featured, jewellerySpotlight] = await Promise.all([
+  const [newArrivals, trending, featured, jewellerySpotlight, stories] = await Promise.all([
     Product.find({ isNewArrival: true }).sort({ createdAt: -1 }).limit(8).lean(),
     Product.find().sort({ popularityScore: -1, soldCount: -1, views: -1 }).limit(8).lean(),
     Product.find({ featured: true }).sort({ createdAt: -1 }).limit(8).lean(),
     Product.find({ category: new RegExp(`^${escapeRegex(JEWELLERY_CATEGORY)}$`, "i") })
       .sort({ featured: -1, createdAt: -1 })
       .limit(8)
-      .lean()
+      .lean(),
+    Story.find({ published: true }).sort({ sortOrder: 1, createdAt: -1 }).limit(8).lean()
   ]);
 
   res.json({
     newArrivals: newArrivals.map(formatProduct).filter((product) => product.isNewArrival),
     trending: trending.map(formatProduct),
     recommended: featured.map(formatProduct),
-    jewellerySpotlight: jewellerySpotlight.map(formatProduct)
+    jewellerySpotlight: jewellerySpotlight.map(formatProduct),
+    stories
   });
 };
 
