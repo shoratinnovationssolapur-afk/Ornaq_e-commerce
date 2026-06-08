@@ -25,6 +25,7 @@ import ProfilePage from "./pages/ProfilePage";
 import InfoPage from "./pages/InfoPage";
 import ToastViewport from "./components/ToastViewport";
 import ProductDetails from "./pages/ProductDetails";
+import PolicyManagementPage from "./pages/PolicyManagementPage";
 
 function AppRoutes() {
   const location = useLocation();
@@ -60,14 +61,17 @@ function AppRoutes() {
           <Route path="/admin/products" element={<ProtectedRoute adminOnly><ProductManagementPage /></ProtectedRoute>} />
           <Route path="/admin/products/add" element={<ProtectedRoute adminOnly><AddProductPage /></ProtectedRoute>} />
           <Route path="/admin/orders" element={<ProtectedRoute adminOnly><AdminOrdersPage /></ProtectedRoute>} />
+          <Route path="/admin/policies" element={<ProtectedRoute adminOnly><PolicyManagementPage /></ProtectedRoute>} />
           <Route path="/privacy-policy" element={<InfoPage slug="privacy-policy" />} />
           <Route path="/terms-and-conditions" element={<InfoPage slug="terms-and-conditions" />} />
-          <Route path="/refund-policy" element={<InfoPage slug="refund-policy" />} />
+          <Route path="/refund-return-replacement-policy" element={<InfoPage slug="refund-return-replacement-policy" />} />
+          <Route path="/refund-policy" element={<InfoPage slug="refund-return-replacement-policy" />} />
           <Route path="/shipping-policy" element={<InfoPage slug="shipping-policy" />} />
           <Route path="/cancellation-policy" element={<InfoPage slug="cancellation-policy" />} />
           <Route path="/disclaimer" element={<InfoPage slug="disclaimer" />} />
           <Route path="/contact" element={<InfoPage slug="contact" />} />
           <Route path="/faq" element={<InfoPage slug="faq" />} />
+          <Route path="/policies/:slug" element={<InfoPage />} />
           <Route
             path="/saree/:code"
             element={<ProductDetails />}

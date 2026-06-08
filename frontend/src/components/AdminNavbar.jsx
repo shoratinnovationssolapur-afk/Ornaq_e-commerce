@@ -53,6 +53,12 @@ export default function AdminNavbar() {
             >
               Orders
             </NavLink>
+            <NavLink 
+              to="/admin/policies" 
+              className={({ isActive }) => `whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'bg-brand-100 text-brand-800 shadow-md' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
+            >
+              Policies
+            </NavLink>
             <button
               onClick={handleLogout}
               className="ml-2 whitespace-nowrap px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all shadow-sm"
@@ -118,6 +124,9 @@ export default function AdminNavbar() {
                   </NavLink>
                   <NavLink to="/admin/products/add" className="nav-link" onClick={closeMobileMenu}>
                     Add New Product
+                  </NavLink>
+                  <NavLink to="/admin/policies" className="nav-link" onClick={closeMobileMenu}>
+                    Policy Manager
                   </NavLink>
                   
                   <div className="mt-6">

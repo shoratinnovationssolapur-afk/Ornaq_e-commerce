@@ -6,6 +6,7 @@ import api from "../services/api";
 import heroBanner from "../assets/hero-banner.png";
 import { JEWELLERY_CATEGORY } from "../utils/catalog";
 import { getHomeCategories } from "../utils/homeCategories";
+import { PRIMARY_POLICY_SLUGS, getPolicyPath } from "../utils/policyPages";
 
 export default function HomePage() {
   const [homeFeed, setHomeFeed] = useState({
@@ -14,11 +15,15 @@ export default function HomePage() {
     recommended: [],
     jewellerySpotlight: []
   });
+  const [policies, setPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get("/products/home-feed")
-      .then((response) => setHomeFeed(response.data))
+    Promise.all([api.get("/products/home-feed"), api.get("/policies")])
+      .then(([homeFeedResponse, policyResponse]) => {
+        setHomeFeed(homeFeedResponse.data);
+        setPolicies(policyResponse.data);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -62,6 +67,15 @@ export default function HomePage() {
       desc: "Authentic products, transparent pricing, easy returns, and care built one customer at a time."
     }
   ];
+  const featuredPolicies = policies
+    .filter((policy) => policy.showOnHome)
+    .sort((a, b) => {
+      const aPriority = PRIMARY_POLICY_SLUGS.indexOf(a.slug);
+      const bPriority = PRIMARY_POLICY_SLUGS.indexOf(b.slug);
+      const normalizedA = aPriority === -1 ? 999 : aPriority;
+      const normalizedB = bPriority === -1 ? 999 : bPriority;
+      return normalizedA - normalizedB || a.sortOrder - b.sortOrder;
+    });
 
   return (
     <div className="min-h-screen bg-[#fffdf9]">
@@ -331,8 +345,54 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto mt-32 max-w-7xl px-6 sm:mt-48 sm:px-8">
+        <div className="rounded-[3rem] border border-stone-100 bg-white p-8 shadow-2xl shadow-stone-200/50 sm:p-12">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Store Policies</p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-stone-900 sm:text-5xl">
+                Clear rules, transparent shopping.
+              </h2>
+            </div>
+            <p className="max-w-xl text-sm font-medium leading-relaxed text-stone-500 sm:text-base">
+              Review privacy, terms, refund guidance, and any new rules published by the ORNAQ admin team before placing an order.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+            {featuredPolicies.map((policy) => (
+              <Link
+                key={policy._id}
+                to={getPolicyPath(policy.slug)}
+                className="group rounded-[2rem] border border-stone-100 bg-stone-50/70 p-6 transition-all hover:-translate-y-1 hover:border-brand-200 hover:bg-white hover:shadow-xl hover:shadow-stone-200/50"
+              >
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-brand-700">{policy.eyebrow || "Policy"}</p>
+                <h3 className="mt-4 text-2xl font-black text-stone-900">{policy.title}</h3>
+                <p className="mt-4 text-sm font-medium leading-relaxed text-stone-500">
+                  {policy.summary}
+                </p>
+                <div className="mt-6 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-700">
+                  Read rule
+                  <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {!loading && featuredPolicies.length === 0 && (
+            <div className="mt-10 rounded-[2rem] border border-dashed border-stone-200 bg-stone-50 px-6 py-8 text-center">
+              <p className="text-sm font-semibold text-stone-500">
+                Policy cards will appear here when the admin enables them for the homepage.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Intelligence Section */}
-      <section className="mx-auto mt-32 max-w-6xl px-6 sm:mt-48 sm:px-8 pb-32">
+      <section className="mx-auto mt-16 max-w-6xl px-6 pb-32 sm:px-8">
         <div className="grid gap-12 rounded-[4rem] border border-stone-100 bg-white p-12 shadow-2xl shadow-stone-200/50 md:grid-cols-3 md:gap-16 md:p-20">
           {[
             { title: "Occasion Ready", desc: "Handpicked sarees and jewellery for weddings, festivals, gifting, and graceful everyday dressing.", label: "Curation" },
