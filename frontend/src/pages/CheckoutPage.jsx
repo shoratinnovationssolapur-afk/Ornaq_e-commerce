@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api, { getApiErrorMessage } from "../services/api";
 import { useStore } from "../context/StoreContext";
 import { useNotification } from "../context/NotificationContext";
@@ -28,7 +28,8 @@ const loadRazorpayScript = () =>
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { cart, cartSummary, clearCart } = useStore();
+  const location = useLocation();
+  const { cart, clearCart, removeOrderedItemsFromCart } = useStore();
   const { showToast } = useNotification();
   const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState("COD");
@@ -44,13 +45,36 @@ export default function CheckoutPage() {
     pincode: ""
   });
 
-  const subtotal = useMemo(() => cartSummary.subtotal, [cartSummary]);
+  const buyNowCheckoutItem = location.state?.buyNowItem;
+  const checkoutItems = useMemo(() => {
+    if (!buyNowCheckoutItem?.product) return cart;
+
+    return [
+      {
+        ...buyNowCheckoutItem.product,
+        qty: Number(buyNowCheckoutItem.qty) || 1,
+        selectedColor:
+          buyNowCheckoutItem.selectedColor ||
+          buyNowCheckoutItem.product.color ||
+          buyNowCheckoutItem.product.colors?.[0] ||
+          ""
+      }
+    ];
+  }, [buyNowCheckoutItem, cart]);
+  const checkoutSummary = useMemo(
+    () => ({
+      subtotal: checkoutItems.reduce((sum, item) => sum + (item.discountPrice || item.price) * item.qty, 0),
+      quantity: checkoutItems.reduce((sum, item) => sum + item.qty, 0)
+    }),
+    [checkoutItems]
+  );
+  const subtotal = useMemo(() => checkoutSummary.subtotal, [checkoutSummary]);
   const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
   const totalAmount = subtotal + shippingFee;
   const hasMissingAddressFields = !address.name || !address.phone || !address.line1 || !address.city || !address.state || !address.pincode;
 
   const placeOrder = async () => {
-    if (!cart.length) {
+    if (!checkoutItems.length) {
       setError("Your cart is empty.");
       return;
     }
@@ -74,7 +98,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    const orderItems = cart.map((item) => ({
+    const orderItems = checkoutItems.map((item) => ({
       product: item._id || item.product?._id || item.product,
       qty: Number(item.qty) || 0,
       selectedColor: item.selectedColor || item.color || ""
@@ -122,7 +146,7 @@ export default function CheckoutPage() {
             setProcessing(true);
             try {
               const verifyRes = await api.post("/payments/razorpay/verify", paymentResponse);
-              await clearCart();
+              removeOrderedItemsFromCart(orderItems);
               showToast({
                 title: "Payment successful",
                 message: "Your Razorpay payment was verified and the order is confirmed.",
@@ -159,7 +183,11 @@ export default function CheckoutPage() {
       }
 
       if (res.data?.order?.paymentStatus !== "FAILED") {
-        await clearCart();
+        if (buyNowCheckoutItem?.product) {
+          removeOrderedItemsFromCart(orderItems);
+        } else {
+          await clearCart();
+        }
         showToast({
           title: "Order placed successfully",
           message: "You can now track the order timeline from your profile.",
@@ -276,7 +304,7 @@ export default function CheckoutPage() {
           <div className="rounded-[2.5rem] border border-stone-100 bg-white p-8 shadow-2xl shadow-stone-200/50">
             <h2 className="text-xl font-black text-stone-900">Order Summary</h2>
             <div className="mt-8 max-h-60 space-y-4 overflow-y-auto pr-2 scrollbar-hide">
-              {cart.map((item) => (
+              {checkoutItems.map((item) => (
                 <div key={`${item._id}-${item.selectedColor || "default"}`} className="flex justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-stone-800">{item.name}</p>
@@ -312,7 +340,7 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={!cart.length || processing}
+              disabled={!checkoutItems.length || processing}
               className="btn-primary mt-8 w-full py-5 text-lg shadow-2xl disabled:opacity-50"
             >
               Confirm Luxury Order
