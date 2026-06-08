@@ -91,6 +91,27 @@ export const StoreProvider = ({ children }) => {
     setCart([]);
   }, [isAuthed]);
 
+  const removeOrderedItemsFromCart = useCallback((orderedItems = []) => {
+    setCart((prev) =>
+      prev
+        .map((cartItem) => {
+          const orderedItem = orderedItems.find(
+            (item) =>
+              String(item.product || item._id || "") === String(cartItem._id || "") &&
+              String(item.selectedColor || "") === String(cartItem.selectedColor || "")
+          );
+
+          if (!orderedItem) return cartItem;
+
+          return {
+            ...cartItem,
+            qty: Math.max(0, Number(cartItem.qty || 0) - Number(orderedItem.qty || 0))
+          };
+        })
+        .filter((item) => Number(item.qty || 0) > 0)
+    );
+  }, []);
+
   const removeFromCart = useCallback(async (productId, selectedColor = "") => {
     if (isAuthed) {
       await api.delete(`/cart/${productId}`, { params: selectedColor ? { color: selectedColor } : {} }).catch(() => {});
@@ -145,9 +166,10 @@ export const StoreProvider = ({ children }) => {
       removeFromCart,
       toggleWishlist,
       markViewed,
-      clearCart
+      clearCart,
+      removeOrderedItemsFromCart
     }),
-    [cart, wishlist, recentlyViewed, cartSummary]
+    [cart, wishlist, recentlyViewed, cartSummary, addToCart, updateCartQuantity, removeFromCart, toggleWishlist, markViewed, clearCart, removeOrderedItemsFromCart]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
