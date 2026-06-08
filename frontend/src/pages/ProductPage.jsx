@@ -78,7 +78,15 @@ export default function ProductPage() {
 
   const buyNow = async () => {
     await addToCart(product, 1, selectedColor);
-    navigate("/checkout");
+    navigate("/checkout", {
+      state: {
+        buyNowItem: {
+          product,
+          qty: 1,
+          selectedColor: selectedColor || product.color || product.colors?.[0] || ""
+        }
+      }
+    });
   };
 
   if (!product) {
