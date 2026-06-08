@@ -97,7 +97,7 @@ export default function OrderTrackingPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <button type="button" onClick={downloadInvoice} className="btn-secondary px-6 py-3 text-[10px]">
-                Artifact Invoice
+                Download Invoice
               </button>
               <button type="button" disabled={actionLoading} onClick={reorder} className="btn-primary px-6 py-3 text-[10px]">
                 Reacquire Items
