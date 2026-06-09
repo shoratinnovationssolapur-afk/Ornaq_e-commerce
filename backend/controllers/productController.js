@@ -76,6 +76,34 @@ const buildExactMatch = (value) => {
   };
 };
 
+const buildSareeCodeSearch = (value, exact = false) => {
+  const code = normalizeString(value);
+  const escapedCode = exact ? `^${escapeRegex(code)}$` : escapeRegex(code);
+
+  return {
+    $or: [
+      { sareeCode: { $regex: escapedCode, $options: "i" } },
+      {
+        $expr: {
+          $regexMatch: {
+            input: { $toString: { $ifNull: ["$sareeCode", ""] } },
+            regex: escapedCode,
+            options: "i"
+          }
+        }
+      }
+    ]
+  };
+};
+
+const buildSearchOr = (query) => [
+  { name: { $regex: escapeRegex(query), $options: "i" } },
+  buildSareeCodeSearch(query),
+  { fabric: { $regex: escapeRegex(query), $options: "i" } },
+  { category: { $regex: escapeRegex(query), $options: "i" } },
+  { colors: { $regex: escapeRegex(query), $options: "i" } }
+];
+
 const resolveSort = (sort) =>
   (
     {
@@ -344,13 +372,7 @@ export const getProducts = async (req, res) => {
     ...(excludeId ? { _id: { $ne: excludeId } } : {}),
     ...(nameSearch
       ? {
-          $or: [
-            { name: { $regex: escapeRegex(nameSearch), $options: "i" } },
-            { sareeCode: { $regex: escapeRegex(nameSearch), $options: "i" } },
-            { fabric: { $regex: escapeRegex(nameSearch), $options: "i" } },
-            { category: { $regex: escapeRegex(nameSearch), $options: "i" } },
-            { colors: { $regex: escapeRegex(nameSearch), $options: "i" } }
-          ]
+          $or: buildSearchOr(nameSearch)
         }
       : {}),
     ...(category ? { category: buildExactMatch(category) } : {}),
@@ -399,7 +421,7 @@ export const getSearchSuggestions = async (req, res) => {
   const suggestions = await Product.find({
     $or: [
       { name: { $regex: escapeRegex(query), $options: "i" } },
-      { sareeCode: { $regex: escapeRegex(query), $options: "i" } },
+      buildSareeCodeSearch(query),
       { category: { $regex: escapeRegex(query), $options: "i" } },
       { fabric: { $regex: escapeRegex(query), $options: "i" } }
     ]
@@ -477,9 +499,7 @@ export const getProductDiscoveryFeed = async (req, res) => {
 
 export const getProductBySareeCode = async (req, res) => {
    const code = normalizeString(req.params.code);
-   const product = await Product.findOne({
-      sareeCode: { $regex: `^${escapeRegex(code)}$`, $options: "i" }
-   }).lean();
+   const product = await Product.findOne(buildSareeCodeSearch(code, true)).lean();
 
    if (!product) {
       return res.status(404).json({
