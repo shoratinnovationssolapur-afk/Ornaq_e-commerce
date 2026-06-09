@@ -1,27 +1,40 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import api, { getApiErrorMessage } from "../services/api";
 import { formatCurrency, getProductImage } from "../utils/catalog";
 
 const ProductDetails = () => {
   const { code } = useParams();
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const fetchProduct = async () => {
+      setLoading(true);
+      setErrorMessage("");
+
       try {
-        const res = await axios.get(`/api/products/saree/${code}`);
+        const res = await api.get(`/products/saree/${encodeURIComponent(code)}`);
         setProduct(res.data);
       } catch (error) {
         console.log(error);
+        setProduct(null);
+        setErrorMessage(getApiErrorMessage(error, "No saree found for this code."));
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchProduct();
   }, [code]);
 
-  if (!product) {
+  if (loading) {
     return <h2>Loading...</h2>;
+  }
+
+  if (!product) {
+    return <h2>{errorMessage || "No saree found for this code."}</h2>;
   }
 
   return (
