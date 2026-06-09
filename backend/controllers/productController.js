@@ -346,6 +346,7 @@ export const getProducts = async (req, res) => {
       ? {
           $or: [
             { name: { $regex: escapeRegex(nameSearch), $options: "i" } },
+            { sareeCode: { $regex: escapeRegex(nameSearch), $options: "i" } },
             { fabric: { $regex: escapeRegex(nameSearch), $options: "i" } },
             { category: { $regex: escapeRegex(nameSearch), $options: "i" } },
             { colors: { $regex: escapeRegex(nameSearch), $options: "i" } }
@@ -398,11 +399,12 @@ export const getSearchSuggestions = async (req, res) => {
   const suggestions = await Product.find({
     $or: [
       { name: { $regex: escapeRegex(query), $options: "i" } },
+      { sareeCode: { $regex: escapeRegex(query), $options: "i" } },
       { category: { $regex: escapeRegex(query), $options: "i" } },
       { fabric: { $regex: escapeRegex(query), $options: "i" } }
     ]
   })
-    .select("name slug category fabric color colors price discountPrice discountPercent images isNewArrival")
+    .select("name slug sareeCode category fabric color colors price discountPrice discountPercent images isNewArrival")
     .limit(8)
     .lean();
 
@@ -474,8 +476,9 @@ export const getProductDiscoveryFeed = async (req, res) => {
 };
 
 export const getProductBySareeCode = async (req, res) => {
+   const code = normalizeString(req.params.code);
    const product = await Product.findOne({
-      sareeCode: req.params.code
+      sareeCode: { $regex: `^${escapeRegex(code)}$`, $options: "i" }
    }).lean();
 
    if (!product) {
