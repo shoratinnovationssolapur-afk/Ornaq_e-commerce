@@ -1,8 +1,67 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
+import api, { getApiErrorMessage } from "../services/api";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, updateUserState } = useAuth(); // Assuming updateUserState or similar exists to refresh context
+  const { showToast } = useNotification();
+
+  // Local Form State
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+  });
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      name: user?.name || "",
+      phone: user?.phone || "",
+    });
+    setIsEditing(false);
+  };
+
+// ProfilePage.jsx (Frontend)
+
+const handleSaveChanges = async (event) => {
+  event.preventDefault();
+  setSaving(true);
+
+  try {
+    // Change this path from "/users/profile" to "/auth/profile"
+    const response = await api.put("/auth/profile", {
+      name: formData.name.trim(),
+      phone: formData.phone.trim(),
+    });
+
+    if (updateUserState) {
+      updateUserState(response.data.user);
+    }
+
+    showToast({
+      title: "Profile Updated",
+      message: "Your sanctuary preferences have been safely curated.",
+      tone: "success",
+    });
+    setIsEditing(false);
+  } catch (error) {
+    showToast({
+      title: "Update Failed",
+      message: getApiErrorMessage(error, "Could not save your preferences."),
+      tone: "error",
+    });
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#fffdf9] pb-20">
@@ -16,26 +75,77 @@ export default function ProfilePage() {
         </header>
 
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-          <section className="rounded-[3rem] border border-stone-100 bg-white p-8 shadow-2xl shadow-stone-200/50 sm:p-12">
-            <div className="flex items-center gap-6 mb-10">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-stone-900 text-2xl font-black text-white shadow-xl shadow-stone-200">
-                {user?.name?.[0] || "U"}
+          {/* Editable Sanctuary Profile Card */}
+          <section className="rounded-[3rem] border border-stone-100 bg-white p-8 shadow-2xl shadow-stone-200/50 sm:p-12 h-fit">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+              <div className="flex items-center gap-6">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-stone-900 text-2xl font-black text-white shadow-xl shadow-stone-200">
+                  {formData.name?.[0] || user?.name?.[0] || "U"}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-stone-900">{user?.name || "ORNAQ Customer"}</h2>
+                  <p className="text-xs font-bold uppercase tracking-widest text-brand-700 mt-1">Premium Member</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-black text-stone-900">{user?.name || "ORNAQ Customer"}</h2>
-                <p className="text-xs font-bold uppercase tracking-widest text-brand-700 mt-1">Premium Member</p>
-              </div>
+
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="w-fit rounded-xl border border-stone-200 bg-stone-50 px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 transition-all"
+                >
+                  Edit Profile
+                </button>
+              )}
             </div>
 
-            <div className="space-y-8">
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-300">Registered Email</p>
-                <p className="text-base font-bold text-stone-700">{user?.email || "No email linked"}</p>
+            <form onSubmit={handleSaveChanges} className="space-y-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 ml-1">
+                  Full Name
+                </label>
+                {isEditing ? (
+                  <input
+                    required
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full rounded-2xl bg-stone-50 px-5 py-3 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
+                  />
+                ) : (
+                  <p className="text-base font-bold text-stone-700 px-1">{user?.name || "No name linked"}</p>
+                )}
               </div>
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-300">Contact Number</p>
-                <p className="text-base font-bold text-stone-700">{user?.phone || "No phone linked"}</p>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 ml-1">
+                  Registered Email
+                </label>
+                {/* Email is usually kept read-only for identity safety */}
+                <p className="text-base font-bold text-stone-500 bg-stone-50/50 px-5 py-3 rounded-2xl border border-stone-100/50 sm:bg-transparent sm:p-1 sm:border-transparent">
+                  {user?.email || "No email linked"}
+                </p>
               </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 ml-1">
+                  Contact Number
+                </label>
+                {isEditing ? (
+                  <input
+                    required
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full rounded-2xl bg-stone-50 px-5 py-3 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
+                    placeholder="+91 98765 43210"
+                  />
+                ) : (
+                  <p className="text-base font-bold text-stone-700 px-1">{user?.phone || "No phone linked"}</p>
+                )}
+              </div>
+
               <div className="space-y-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-300">Security & Sign-in</p>
                 <div className="flex flex-wrap gap-2">
@@ -46,9 +156,31 @@ export default function ProfilePage() {
                   ))}
                 </div>
               </div>
-            </div>
+
+              {/* Action Buttons inside Edit Mode */}
+              {isEditing && (
+                <div className="flex items-center gap-3 pt-4 border-t border-stone-100">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={handleCancel}
+                    className="flex-1 rounded-2xl border border-stone-200 py-3.5 text-xs font-black uppercase tracking-wider text-stone-500 hover:bg-stone-50 disabled:opacity-50 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 rounded-2xl bg-stone-900 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-xl shadow-stone-900/20 hover:bg-stone-800 disabled:opacity-50 transition-all"
+                  >
+                    {saving ? "Saving Hub..." : "Save Preferences"}
+                  </button>
+                </div>
+              )}
+            </form>
           </section>
 
+          {/* Navigation Hub */}
           <section className="space-y-6">
             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700 px-4">Navigation Hub</h2>
             <div className="grid gap-4">

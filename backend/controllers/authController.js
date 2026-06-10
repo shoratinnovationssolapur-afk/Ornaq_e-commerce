@@ -138,7 +138,7 @@ export const requestOtp = async (req, res) => {
   const expiryMinutes = parseInt(process.env.OTP_EXPIRY_MINUTES || "5");
   user.otpLogin = {
     codeHash: buildOtpHash(otp),
-    expiresAt: new Date(Date.now() + 1000 * 60 * expiryMinutes),
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * expiryMinutes),
     attempts: 0
   };
   ensureProvider(user, "mobile_otp");
@@ -288,4 +288,26 @@ export const resetPassword = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   res.json(serializeUser(req.user));
+};
+
+// --- NEW METHOD: UPDATE USER SANCTUARY PREFERENCES ---
+export const updateProfile = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({ 
+      message: "User context workspace not found." 
+    });
+  }
+
+  // Selective validation assignments
+  if (req.body.name !== undefined) user.name = req.body.name;
+  if (req.body.phone !== undefined) user.phone = req.body.phone;
+
+  const updatedUser = await user.save();
+
+  return res.status(StatusCodes.OK).json({
+    message: "Profile preferences updated safely.",
+    user: serializeUser(updatedUser) // Returns matching structure expected by your context mapping
+  });
 };
