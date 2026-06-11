@@ -9,7 +9,8 @@ import {
   register,
   requestOtp,
   resetPassword,
-  verifyOtp
+  verifyOtp,
+  updateProfile // 👈 1. IMPORT YOUR NEW CONTROLLER HERE
 } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
@@ -60,5 +61,17 @@ router.post(
 );
 router.get("/profile", protect, getProfile);
 router.get("/me", protect, getProfile);
+
+// 👈 2. ADD THIS EXACT BLOCK HERE TO HANDLE THE PUT REQUEST
+router.put(
+  "/profile",
+  protect,
+  [
+    body("name").optional().trim().notEmpty().withMessage("Name cannot be empty"),
+    body("phone").optional().trim().isString()
+  ],
+  validateRequest,
+  updateProfile
+);
 
 export default router;
