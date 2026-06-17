@@ -29,15 +29,36 @@ const serializePolicy = (policy) => ({
 export const ensureDefaultPolicies = async () => {
   if (!defaultPolicies.length) return;
 
-  await PolicyPage.bulkWrite(
-    defaultPolicies.map((policy) => ({
-      updateOne: {
-        filter: { slug: policy.slug },
-        update: { $setOnInsert: policy },
-        upsert: true
-      }
-    }))
-  );
+  for (const policy of defaultPolicies) {
+    const existingPolicy = await PolicyPage.findOne({ slug: policy.slug });
+
+    if (!existingPolicy) {
+      await PolicyPage.create(policy);
+      continue;
+    }
+
+    if (!existingPolicy.isSystem) {
+      continue;
+    }
+
+    const needsDefaultRefresh = !existingPolicy.body.includes("## मराठी नियम व अटी");
+
+    if (!needsDefaultRefresh) {
+      continue;
+    }
+
+    existingPolicy.title = policy.title;
+    existingPolicy.footerLabel = policy.footerLabel;
+    existingPolicy.eyebrow = policy.eyebrow;
+    existingPolicy.summary = policy.summary;
+    existingPolicy.body = policy.body;
+    existingPolicy.showInFooter = policy.showInFooter;
+    existingPolicy.showOnHome = policy.showOnHome;
+    existingPolicy.isPublished = policy.isPublished;
+    existingPolicy.sortOrder = policy.sortOrder;
+
+    await existingPolicy.save();
+  }
 };
 
 const getPolicySort = () => ({ sortOrder: 1, title: 1, createdAt: 1 });
