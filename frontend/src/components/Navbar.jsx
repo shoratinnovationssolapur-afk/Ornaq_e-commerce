@@ -21,9 +21,10 @@ export default function Navbar() {
 
   const closeMobileMenu = () => setIsMobileOpen(false);
   const handleSareeSearch = () => {
-    if (!sareeCode.trim()) return;
+    const code = sareeCode.trim();
+    if (!code) return;
 
-    navigate(`/saree/${sareeCode}`);
+    navigate(`/saree/${encodeURIComponent(code)}`);
   };
   const isJewelleryView =
     location.pathname === "/shop" &&

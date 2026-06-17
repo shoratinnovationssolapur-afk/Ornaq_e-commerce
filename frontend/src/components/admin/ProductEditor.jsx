@@ -12,6 +12,8 @@ const emptyForm = {
   price: "",
   discountPercent: "",
   stock: "",
+  sareeCode: "",
+  youtubeLink: "",
   deliveryEstimateMinDays: 3,
   deliveryEstimateMaxDays: 5,
   featured: false,
@@ -56,6 +58,8 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
       price: product.price || "",
       discountPercent: product.discountPercent || 0,
       stock: product.stock || 0,
+      sareeCode: product.sareeCode || "",
+      youtubeLink: product.youtubeLink || "",
       deliveryEstimateMinDays: product.deliveryEstimate?.minDays || 3,
       deliveryEstimateMaxDays: product.deliveryEstimate?.maxDays || 5,
       featured: Boolean(product.featured),
@@ -213,6 +217,14 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
             )}
 
             <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Saree code</label>
+                <input required value={form.sareeCode} onChange={(event) => setForm((current) => ({ ...current, sareeCode: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">YouTube link</label>
+                <input type="url" value={form.youtubeLink} onChange={(event) => setForm((current) => ({ ...current, youtubeLink: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
+              </div>
               <div>
                 <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Price</label>
                 <input required min="0" type="number" value={form.price} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />

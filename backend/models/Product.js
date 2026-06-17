@@ -61,10 +61,12 @@ const productSchema = new mongoose.Schema(
     },
      sareeCode: {
       type: String,
-      unique: true
+      unique: true,
+      trim: true,
+      index: true
    },
 
-   youtubeLink: String,
+   youtubeLink: { type: String, trim: true },
    
     serviceablePincodes: [{ type: String }],
     qrCodeUrl: String

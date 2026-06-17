@@ -38,7 +38,7 @@ export default function CartPage() {
             {cart.map((item) => (
               <article key={`${item._id}-${item.selectedColor || "default"}`} className="group relative flex gap-6 rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-xl shadow-stone-100 transition-all hover:shadow-stone-200/50">
                 <Link to={`/product/${item.slug}`} className="relative aspect-[3/4] w-28 shrink-0 overflow-hidden rounded-2xl bg-stone-50 sm:w-32">
-                  <img src={getProductImage(item)} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <img src={getProductImage(item, item.selectedColor)} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 </Link>
                 
                 <div className="flex flex-1 flex-col py-1">

@@ -53,6 +53,7 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [processing, setProcessing] = useState(false);
+  const [fetchingLocation, setFetchingLocation] = useState(false); // New state for location loader
   const [error, setError] = useState("");
   const [address, setAddress] = useState({
     name: "",
@@ -75,6 +76,79 @@ export default function CheckoutPage() {
   const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
   const totalAmount = subtotal + shippingFee;
   const hasMissingAddressFields = !address.name || !address.phone || !address.line1 || !address.city || !address.state || !address.pincode;
+
+  // --- NEW FEATURE: FETCH CURRENT LOCATION ---
+  const handleFetchLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setFetchingLocation(true);
+    setError("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          // Using OpenStreetMap's free reverse geocoding API
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+          );
+          const data = await response.json();
+
+          if (data && data.address) {
+            const addr = data.address;
+            
+            // Build a readable street address line
+            const streetLine = [
+              addr.road,
+              addr.suburb,
+              addr.neighbourhood
+            ].filter(Boolean).join(", ");
+
+            setAddress((prev) => ({
+              ...prev,
+              line1: streetLine || data.display_name.split(",")[0] || prev.line1,
+              city: addr.city || addr.town || addr.village || prev.city,
+              state: addr.state || prev.state,
+              pincode: addr.postcode || prev.pincode
+            }));
+
+            showToast({
+              title: "Location detected",
+              message: "Address fields filled successfully.",
+              tone: "success"
+            });
+          } else {
+            setError("Could not extract a readable address from your location coordinates.");
+          }
+        } catch (err) {
+          setError("Failed to fetch address details. Please fill manually.");
+        } finally {
+          setFetchingLocation(false);
+        }
+      },
+      (geoError) => {
+        setFetchingLocation(false);
+        switch (geoError.code) {
+          case geoError.PERMISSION_DENIED:
+            setError("Location permission denied. Please enable location access in your browser.");
+            break;
+          case geoError.POSITION_UNAVAILABLE:
+            setError("Location information is unavailable.");
+            break;
+          case geoError.TIMEOUT:
+            setError("Location request timed out.");
+            break;
+          default:
+            setError("An unknown error occurred while fetching location.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+  // -------------------------------------------
 
   const placeOrder = async () => {
     if (!checkoutItems.length) {
@@ -235,10 +309,27 @@ export default function CheckoutPage() {
         <div className="space-y-12">
           {/* Delivery Section */}
           <section>
-            <div className="mb-6 flex items-center gap-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-black text-white">1</span>
-              <h2 className="text-xl font-black text-stone-900">Delivery Details</h2>
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-black text-white">1</span>
+                <h2 className="text-xl font-black text-stone-900">Delivery Details</h2>
+              </div>
+              
+              {/* FETCH LOCATION BUTTON */}
+              <button
+                type="button"
+                disabled={fetchingLocation}
+                onClick={handleFetchLocation}
+                className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 disabled:opacity-50 transition-all"
+              >
+                <svg className={`h-4 w-4 text-brand-600 ${fetchingLocation ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {fetchingLocation ? "Detecting..." : "Use Current Location"}
+              </button>
             </div>
+            
             <div className="grid gap-4 rounded-[2.5rem] border border-stone-100 bg-white p-8 shadow-xl shadow-stone-100">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
