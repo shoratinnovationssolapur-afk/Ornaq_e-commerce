@@ -4,9 +4,10 @@ import { useStore } from "../context/StoreContext";
 import { useRealtime } from "../hooks/useRealtime";
 import api from "../services/api";
 import ProductCard from "../components/ProductCard";
+import ProductMediaViewer from "../components/ProductMediaViewer";
 import ReviewSection from "../components/ReviewSection";
 import SkeletonBlock from "../components/SkeletonBlock";
-import { formatCurrency, getProductColors, getProductImage, getProductTypeLabel } from "../utils/catalog";
+import { formatCurrency, getMarketPrice, getOfferPrice, getProductColors, getProductTypeLabel, hasOfferPrice } from "../utils/catalog";
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -19,7 +20,6 @@ export default function ProductPage() {
     frequentlyBoughtTogether: []
   });
   const [selectedColor, setSelectedColor] = useState("");
-  const [activeImage, setActiveImage] = useState("");
   const [checkingPincode, setCheckingPincode] = useState(false);
   const [pincode, setPincode] = useState("");
   const [serviceability, setServiceability] = useState(null);
@@ -29,7 +29,6 @@ export default function ProductPage() {
     api.get(`/products/${slug}`).then((response) => {
       setProduct(response.data);
       setSelectedColor(response.data.color || response.data.colors?.[0] || "");
-      setActiveImage(response.data.images?.[0]?.url || "");
       markViewed(response.data);
       document.title = `${response.data.name} | Ornac`;
       api.get(`/products/discovery/${response.data._id}`).then((related) => setDiscovery(related.data)).catch(() => {});
@@ -40,7 +39,9 @@ export default function ProductPage() {
     onStockUpdate: ({ productId, stock }) => setProduct((current) => (current && current._id === productId ? { ...current, stock } : current))
   });
 
-  const effectivePrice = useMemo(() => product?.discountPrice || product?.price || 0, [product]);
+  const effectivePrice = useMemo(() => getOfferPrice(product), [product]);
+  const marketPrice = useMemo(() => getMarketPrice(product), [product]);
+  const showOffer = useMemo(() => hasOfferPrice(product), [product]);
   const productColors = useMemo(() => getProductColors(product), [product]);
   const productTypeLabel = useMemo(() => getProductTypeLabel(product), [product]);
   const activeVariant = useMemo(
@@ -57,10 +58,6 @@ export default function ProductPage() {
     if (activeVariant?.images?.length) return activeVariant.images;
     return product.images || [];
   }, [product, activeVariant]);
-
-  useEffect(() => {
-    setActiveImage(galleryImages[0]?.url || "");
-  }, [galleryImages]);
 
   const recentlyViewedOthers = useMemo(
     () => recentlyViewed.filter((item) => item.slug !== slug).slice(0, 4),
@@ -111,37 +108,7 @@ export default function ProductPage() {
     <div className="mx-auto max-w-7xl px-4 py-6 sm:py-10">
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
         {/* Left Column: Gallery */}
-        <div className="space-y-4">
-          <div className="relative aspect-[3/4] overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-sm sm:aspect-[4/5] lg:aspect-square">
-            <img
-              src={activeImage || getProductImage(product)}
-              alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-700 hover:scale-110"
-            />
-            {product.isNewArrival && (
-              <span className="absolute left-4 top-4 rounded-full bg-amber-400 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">
-                New Arrival
-              </span>
-            )}
-          </div>
-          
-          {galleryImages.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
-              {galleryImages.map((image) => (
-                <button
-                  key={image.url}
-                  type="button"
-                  onClick={() => setActiveImage(image.url)}
-                  className={`relative h-20 w-20 flex-shrink-0 snap-start overflow-hidden rounded-2xl border-2 transition-all ${
-                    activeImage === image.url ? "border-brand-500 scale-95" : "border-transparent opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <img src={image.url} alt={product.name} className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductMediaViewer product={product} galleryImages={galleryImages} selectedColor={selectedColor} />
 
         {/* Right Column: Info */}
         <div className="flex flex-col pt-2 lg:pt-0">
@@ -161,12 +128,10 @@ export default function ProductPage() {
 
             <div className="mt-6 flex items-baseline gap-3">
               <p className="text-3xl font-black text-stone-900 sm:text-4xl">{formatCurrency(effectivePrice)}</p>
-              {Number(product.discountPercent || 0) > 0 && (
+              {showOffer && (
                 <div className="flex items-center gap-2">
-                  <span className="text-lg text-stone-400 line-through">{formatCurrency(product.price)}</span>
-                  <span className="rounded-lg bg-red-100 px-2 py-1 text-xs font-black text-red-600">
-                    SAVE {product.discountPercent}%
-                  </span>
+                  <span className="text-lg text-stone-400 line-through">{formatCurrency(marketPrice)}</span>
+                  <span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">Offer price</span>
                 </div>
               )}
             </div>
