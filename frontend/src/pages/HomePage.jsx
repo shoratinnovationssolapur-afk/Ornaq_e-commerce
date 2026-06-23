@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "../components/ProductCard";
+import ProductModal from "../components/ProductModal";
 import api from "../services/api";
 import heroBanner from "../assets/hero-banner.png";
+import logoGold from "../assets/logo-gold.jpeg";
 import { JEWELLERY_CATEGORY } from "../utils/catalog";
 import { getHomeCategories } from "../utils/homeCategories";
 import { PRIMARY_POLICY_SLUGS, getPolicyPath } from "../utils/policyPages";
@@ -19,6 +21,8 @@ export default function HomePage() {
   const [homeFeed, setHomeFeed] = useState(defaultHomeFeed);
   const [policies, setPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([api.get("/products/home-feed"), api.get("/policies")])
@@ -29,6 +33,16 @@ export default function HomePage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const handleProductClick = (product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
 
   const categories = getHomeCategories(homeFeed.jewellerySpotlight[0]?.images?.[0]?.url);
   const brandNameParts = [
@@ -82,11 +96,11 @@ export default function HomePage() {
       {/* Hero Section - High Impact */}
       <section className="relative h-[90vh] w-full overflow-hidden sm:h-[85vh] lg:h-[94vh]">
         <motion.img 
-          initial={{ scale: 1.1 }}
+          initial={{ scale: 1.05 }}
           animate={{ scale: 1 }}
-          transition={{ duration: 2, ease: "easeOut" }}
-          src={heroBanner} 
-          alt="ORNAQ occasion wear collection" 
+          transition={{ duration: 1.6, ease: "easeOut" }}
+          src={logoGold} 
+          alt="ORNAQ logo background" 
           className="absolute inset-0 h-full w-full object-cover object-center" 
         />
         <div className="absolute inset-0 bg-stone-950/45" />
@@ -99,18 +113,26 @@ export default function HomePage() {
             transition={{ duration: 1, delay: 0.5 }}
             className="max-w-4xl"
           >
-            <div className="mb-6 flex items-center gap-4">
+            <div className="mb-3 flex items-center gap-4 transform -translate-y-6 md:-translate-y-8">
               <span className="h-px w-12 bg-brand-500" />
               <span className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-400 sm:text-xs">
                 Maharashtra / India
               </span>
             </div>
-            <h1 className="text-5xl font-black leading-[1] tracking-tight text-white sm:text-7xl md:text-8xl lg:text-9xl">
-              Wear Your <br /> <span className="text-brand-400 italic font-serif">Story.</span>
-            </h1>
-            <p className="mt-8 max-w-xl text-lg font-medium leading-relaxed text-stone-300 sm:text-xl">
-              Sarees and jewellery curated for the modern Indian woman, rooted in Maharashtra and delivered across India.
-            </p>
+            <div className="flex flex-col items-start gap-4">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0, scale: [1, 1.02, 1] }}
+                transition={{ duration: 3.5, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
+                className="shine-text text-5xl font-black leading-[1] tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl"
+              >
+                Wear Your Story
+              </motion.h1>
+
+              <div className="mt-6 max-w-2xl hero-subtitle text-stone-200">
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl">The Ultimate Women's sarees and jewellery Collection, rooted in Maharashtra and delivered across India.</p>
+              </div>
+            </div>
             <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:gap-6">
               <Link to="/shop" className="btn-primary px-12 py-6 text-sm shadow-2xl">
                 Shop Collection
@@ -119,6 +141,7 @@ export default function HomePage() {
                 New Arrivals
               </Link>
             </div>
+            {/* Removed small info cards per design request */}
           </motion.div>
         </div>
       </section>
@@ -266,7 +289,7 @@ export default function HomePage() {
               loading ? (
                 <div key={index} className="aspect-[4/5] animate-pulse rounded-[2.5rem] bg-white/10" />
               ) : (
-                <ProductCard key={product._id} product={product} />
+                <ProductCard key={product._id} product={product} onCardClick={handleProductClick} />
               )
             )}
           </div>
@@ -294,7 +317,7 @@ export default function HomePage() {
                <div key={i} className="aspect-[3/4] animate-pulse rounded-[2.5rem] bg-stone-50 border border-stone-100" />
              ))
           ) : (
-            homeFeed.newArrivals.map((product) => <ProductCard key={product._id} product={product} />)
+            homeFeed.newArrivals.map((product) => <ProductCard key={product._id} product={product} onCardClick={handleProductClick} />)
           )}
         </div>
       </section>
@@ -404,9 +427,9 @@ export default function HomePage() {
       <section className="mx-auto mt-16 max-w-6xl px-6 pb-32 sm:px-8">
         <div className="grid gap-12 rounded-[4rem] border border-stone-100 bg-white p-12 shadow-2xl shadow-stone-200/50 md:grid-cols-3 md:gap-16 md:p-20">
           {[
-            { title: "Occasion Ready", desc: "Handpicked sarees and jewellery for weddings, festivals, gifting, and graceful everyday dressing.", label: "Curation" },
-            { title: "Made to Feel Personal", desc: "Every piece is chosen to help the woman wearing it feel adorned in a way that feels true to her.", label: "Identity" },
-            { title: "Delivered with Care", desc: "A simple online experience backed by careful delivery, clear pricing, and dependable service.", label: "Service" }
+            { title: "FREE SHIPPING ALL OVER INDIA", desc: "Enjoy free shipping on every ORNAQ order across India.", label: "Shipping" },
+            { title: "AMAZING CUSTOMER SERVICE", desc: "Need help ? Call 9822937198. EVERY CUSTOMER IS LIKE OUR FAMILY.", label: "Support" },
+            { title: "TRUSTED PAYMENTS", desc: "Secure payments via UPI, cards and net banking accepted.", label: "Payments" }
           ].map((item) => (
             <div key={item.title} className="text-center">
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">{item.label}</p>
@@ -416,6 +439,13 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Product Modal */}
+      <ProductModal 
+        product={selectedProduct} 
+        open={isModalOpen} 
+        onClose={closeModal} 
+      />
     </div>
   );
 }
