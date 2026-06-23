@@ -46,15 +46,15 @@ export default function OrderResultPage() {
             <Link className="btn-secondary py-4" to="/shop">
               {success ? "Keep Exploring" : "Return to Shop"}
             </Link>
-            {success && state?.order?._id ? (
-              <Link className="btn-primary py-4" to={`/profile/orders/${state.order._id}`}>
-                View Intel
-              </Link>
-            ) : !success ? (
+            {!success ? (
               <Link className="btn-primary py-4" to="/checkout">
                 Retry Flow
               </Link>
-            ) : null}
+            ) : (
+              <Link className="btn-primary py-4" to="/home">
+                Back Home
+              </Link>
+            )}
           </div>
         </div>
       </div>
