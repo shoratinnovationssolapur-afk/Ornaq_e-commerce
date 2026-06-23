@@ -17,8 +17,8 @@ export default function AddProductPage() {
     fabric: "",
     color: "",
     colorsInput: "",
-    price: "",
-    discountPercent: "",
+    marketPrice: "",
+    offerPrice: "",
     stock: "",
     deliveryEstimateMinDays: 3,
     deliveryEstimateMaxDays: 5,
@@ -26,8 +26,10 @@ export default function AddProductPage() {
     isNewArrival: true
   });
   const [files, setFiles] = useState([]);
+  const [modelFiles, setModelFiles] = useState([]);
   const [variantFiles, setVariantFiles] = useState({});
   const [previews, setPreviews] = useState([]);
+  const [modelPreviews, setModelPreviews] = useState([]);
   const categories = useMemo(() => mergeCategories(metadata.categories), [metadata.categories]);
   const formIsJewellery = isJewelleryCategory(form.category);
   const variantColors = useMemo(
@@ -57,6 +59,12 @@ export default function AddProductPage() {
     setVariantFiles((current) => ({ ...current, [color]: selectedFiles }));
   };
 
+  const handleModelFileChange = (event) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    setModelFiles(selectedFiles);
+    setModelPreviews(selectedFiles.map((file) => URL.createObjectURL(file)));
+  };
+
   const uploadProductImages = async (imageFiles) => {
     if (!imageFiles.length) return [];
 
@@ -74,6 +82,7 @@ export default function AddProductPage() {
     setSubmitting(true);
     try {
       const images = await uploadProductImages(files);
+      const modelImages = await uploadProductImages(modelFiles);
 
       const colors = form.colorsInput
         .split(",")
@@ -96,10 +105,12 @@ export default function AddProductPage() {
         ...form,
         color: form.color || colors[0] || "",
         colors,
-        price: Number(form.price),
-        discountPercent: Number(form.discountPercent || 0),
+        price: Number(form.marketPrice),
+        marketPrice: Number(form.marketPrice),
+        offerPrice: Number(form.offerPrice || form.marketPrice),
         stock: Number(form.stock),
         images,
+        modelImages,
         variants
       });
 
@@ -197,12 +208,12 @@ export default function AddProductPage() {
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700 mb-6">Valuation & Visibility</p>
                 <div className="grid gap-6 grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Price</label>
-                    <input required type="number" className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-black border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="0.00" value={form.price} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Market Price</label>
+                    <input required type="number" className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-black border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="0.00" value={form.marketPrice} onChange={(event) => setForm((current) => ({ ...current, marketPrice: event.target.value }))} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Discount %</label>
-                    <input type="number" className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-black border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="0" value={form.discountPercent} onChange={(event) => setForm((current) => ({ ...current, discountPercent: event.target.value }))} />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Offer Price</label>
+                    <input required type="number" className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-black border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="0.00" value={form.offerPrice} onChange={(event) => setForm((current) => ({ ...current, offerPrice: event.target.value }))} />
                   </div>
                   <div className="space-y-2 col-span-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Live Inventory Stock</label>
@@ -260,6 +271,22 @@ export default function AddProductPage() {
                       ))}
                     </div>
                   )}
+                  <div className="space-y-4 border-t border-stone-100 pt-6">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">360 model images</p>
+                    <div className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
+                      <p className="text-xs font-bold text-stone-500">Upload front, side, back, and side images in order. The storefront will spin them like a model view.</p>
+                      <input type="file" multiple accept="image/*" onChange={handleModelFileChange} className="mt-4 block w-full text-xs text-stone-500" />
+                      {modelPreviews.length > 0 && (
+                        <div className="mt-4 grid grid-cols-4 gap-3">
+                          {modelPreviews.map((src, index) => (
+                            <div key={src} className="aspect-square overflow-hidden rounded-xl bg-white">
+                              <img src={src} alt={`360 preview ${index + 1}`} className="h-full w-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
