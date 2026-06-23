@@ -1,14 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
+import { getOfferPrice } from "../utils/catalog";
 import { useAuth } from "./AuthContext";
 import { useNotification } from "./NotificationContext";
 
 const StoreContext = createContext(null);
+const CART_KEY = "ornac_guest_cart";
 const RECENTLY_VIEWED_KEY = "ornac_recently_viewed";
+const WISHLIST_KEY = "ornac_guest_wishlist";
 
-const readRecentlyViewed = () => {
+const readStoredList = (key) => {
   try {
-    return JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || "[]");
+    return JSON.parse(localStorage.getItem(key) || "[]");
   } catch {
     return [];
   }
@@ -17,17 +20,14 @@ const readRecentlyViewed = () => {
 export const StoreProvider = ({ children }) => {
   const { user } = useAuth();
   const { showToast } = useNotification();
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-  const [recentlyViewed, setRecentlyViewed] = useState(() => readRecentlyViewed());
+  const [cart, setCart] = useState(() => readStoredList(CART_KEY));
+  const [wishlist, setWishlist] = useState(() => readStoredList(WISHLIST_KEY));
+  const [recentlyViewed, setRecentlyViewed] = useState(() => readStoredList(RECENTLY_VIEWED_KEY));
   const isAuthed = Boolean(user);
 
   useEffect(() => {
-    if (!isAuthed) {
-      setCart([]);
-      setWishlist([]);
-      return;
-    }
+    if (!isAuthed) return;
+
     api
       .get("/cart")
       .then((res) =>
@@ -47,24 +47,33 @@ export const StoreProvider = ({ children }) => {
   }, [isAuthed]);
 
   useEffect(() => {
+    if (!isAuthed) localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  }, [cart, isAuthed]);
+
+  useEffect(() => {
+    if (!isAuthed) localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
+  }, [wishlist, isAuthed]);
+
+  useEffect(() => {
     localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(recentlyViewed));
   }, [recentlyViewed]);
 
   const addToCart = useCallback(async (product, qty = 1, selectedColor = "") => {
-    const matcher = (item) => item._id === product._id && String(item.selectedColor || "") === String(selectedColor || "");
+    const normalizedColor = selectedColor || product.color || product.colors?.[0] || "";
+    const matcher = (item) => item._id === product._id && String(item.selectedColor || "") === String(normalizedColor || "");
     const nextQty = (cart.find(matcher)?.qty || 0) + qty;
     if (isAuthed) {
-      await api.post("/cart", { productId: product._id, qty: nextQty, selectedColor }).catch(() => {});
+      await api.post("/cart", { productId: product._id, qty: nextQty, selectedColor: normalizedColor }).catch(() => {});
     }
     setCart((prev) => {
       const found = prev.find(matcher);
       return found
         ? prev.map((item) => (matcher(item) ? { ...item, qty: item.qty + qty } : item))
-        : [...prev, { ...product, qty, selectedColor: selectedColor || product.color || product.colors?.[0] || "" }];
+        : [...prev, { ...product, qty, selectedColor: normalizedColor }];
     });
     showToast({
       title: "Added to cart",
-      message: `${product.name}${selectedColor ? ` • ${selectedColor}` : ""} is now in your bag.`,
+      message: `${product.name}${normalizedColor ? ` - ${normalizedColor}` : ""} is now in your bag.`,
       tone: "success"
     });
   }, [cart, isAuthed, showToast]);
@@ -149,7 +158,7 @@ export const StoreProvider = ({ children }) => {
 
   const cartSummary = useMemo(
     () => ({
-      subtotal: cart.reduce((sum, item) => sum + (item.discountPrice || item.price) * item.qty, 0),
+      subtotal: cart.reduce((sum, item) => sum + getOfferPrice(item) * item.qty, 0),
       quantity: cart.reduce((sum, item) => sum + item.qty, 0)
     }),
     [cart]
