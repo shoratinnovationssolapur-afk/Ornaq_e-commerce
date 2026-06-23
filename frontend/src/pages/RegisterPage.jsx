@@ -108,7 +108,7 @@ export default function RegisterPage() {
 
       <p className="mt-8 text-center text-xs font-medium text-stone-500">
         Already a member?{" "}
-        <Link to="/login" className="font-black text-brand-700 hover:text-brand-800 underline underline-offset-4 uppercase tracking-widest ml-1">
+        <Link to="/admin/login" className="font-black text-brand-700 hover:text-brand-800 underline underline-offset-4 uppercase tracking-widest ml-1">
           Sign In
         </Link>
       </p>
