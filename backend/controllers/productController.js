@@ -10,6 +10,8 @@ import {
   calculatePopularityScore,
   escapeRegex,
   getEffectivePrice,
+  getMarketPrice,
+  getOfferPrice,
   isNewArrivalActive,
   normalizeColorList,
   toSlug
@@ -108,9 +110,11 @@ const resolveSort = (sort) =>
   (
     {
       newest: "-createdAt",
+      latest: "-createdAt",
+      default: "-createdAt",
       oldest: "createdAt",
-      priceAsc: "price",
-      priceDesc: "-price",
+      priceAsc: "offerPrice discountPrice price",
+      priceDesc: "-offerPrice -discountPrice -price",
       trending: "-popularityScore -views",
       bestselling: "-soldCount -analytics.purchases",
       popularity: "-popularityScore -views"
@@ -140,6 +144,8 @@ const withPopularity = (product) => {
 const formatProduct = (product) => {
   const doc = typeof product.toObject === "function" ? product.toObject() : { ...product };
   const colors = normalizeColorList(doc.colors, doc.color);
+  const marketPrice = getMarketPrice(doc);
+  const offerPrice = getOfferPrice(doc);
   const variants =
     Array.isArray(doc.variants) && doc.variants.length
       ? doc.variants
@@ -157,13 +163,18 @@ const formatProduct = (product) => {
     colors,
     variants,
     images: sanitizeImages(doc.images),
+    modelImages: sanitizeImages(doc.modelImages),
+    marketPrice,
+    offerPrice,
+    price: marketPrice,
+    discountPrice: offerPrice,
     analytics: {
       views: Number(doc.analytics?.views ?? doc.views ?? 0),
       cartAdds: Number(doc.analytics?.cartAdds ?? 0),
       wishlistAdds: Number(doc.analytics?.wishlistAdds ?? 0),
       purchases: Number(doc.analytics?.purchases ?? doc.soldCount ?? 0)
     },
-    effectivePrice: getEffectivePrice(doc),
+    effectivePrice: offerPrice || getEffectivePrice(doc),
     isNewArrival: isNewArrivalActive(doc)
   });
 };
@@ -173,12 +184,22 @@ const buildProductPayload = (body, previousProduct) => {
   const slug = toSlug(name);
   const productUrl = buildProductUrl(slug);
   const createdAt = body.createdAt || previousProduct?.createdAt || Date.now();
-  const price = parseNumber(body.price, previousProduct?.price ?? 0);
+  const marketPrice = parseNumber(body.marketPrice ?? body.price, previousProduct?.marketPrice ?? previousProduct?.price ?? 0);
   const discount = Math.max(
     0,
     parseNumber(body.discount ?? body.discountPercent, previousProduct?.discount ?? previousProduct?.discountPercent ?? 0)
   );
+  const previousOfferPrice =
+    previousProduct?.offerPrice ??
+    previousProduct?.discountPrice ??
+    calculateDiscountPrice(previousProduct?.marketPrice ?? previousProduct?.price ?? marketPrice, previousProduct?.discountPercent ?? 0);
+  const legacyDiscountOfferPrice = discount > 0 ? calculateDiscountPrice(marketPrice, discount) : previousOfferPrice;
+  const offerPrice = Math.max(
+    0,
+    parseNumber(body.offerPrice ?? body.discountPrice, legacyDiscountOfferPrice ?? marketPrice)
+  );
   const images = sanitizeImages(Array.isArray(body.images) ? body.images : previousProduct?.images || []);
+  const modelImages = sanitizeImages(Array.isArray(body.modelImages) ? body.modelImages : previousProduct?.modelImages || []);
   const colors = normalizeColorList(parseArrayInput(body.colors), body.color || previousProduct?.color || "");
   const variants = buildVariantPayload({
     colors,
@@ -210,12 +231,15 @@ const buildProductPayload = (body, previousProduct) => {
     color: colors[0] || normalizeString(body.color) || previousProduct?.color || "Multicolor",
     colors,
     variants,
-    price,
-    discount,
-    discountPercent: discount,
-    discountPrice: calculateDiscountPrice(price, discount),
+    price: marketPrice,
+    marketPrice,
+    offerPrice,
+    discount: 0,
+    discountPercent: 0,
+    discountPrice: offerPrice,
     stock: computedStock,
     images,
+    modelImages,
     sareeCode: normalizeString(body.sareeCode) || previousProduct?.sareeCode,
     youtubeLink: normalizeString(body.youtubeLink) || previousProduct?.youtubeLink || "",
     featured: parseBoolean(body.featured, previousProduct?.featured ?? false),
@@ -361,7 +385,7 @@ export const getProducts = async (req, res) => {
     limit,
     minPrice = 0,
     maxPrice = Number.MAX_SAFE_INTEGER,
-    sort = "newest"
+    sort = "default"
   } = req.query;
   const nameSearch = normalizeString(searchQuery || q);
   const filter = {
@@ -426,7 +450,7 @@ export const getSearchSuggestions = async (req, res) => {
       { fabric: { $regex: escapeRegex(query), $options: "i" } }
     ]
   })
-    .select("name slug sareeCode category fabric color colors price discountPrice discountPercent images isNewArrival")
+    .select("name slug sareeCode category fabric color colors price marketPrice offerPrice discountPrice images modelImages isNewArrival")
     .limit(8)
     .lean();
 
