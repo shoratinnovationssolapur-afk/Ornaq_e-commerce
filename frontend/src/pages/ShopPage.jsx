@@ -2,10 +2,11 @@ import { useDeferredValue, useEffect, useMemo, useState, useCallback } from "rea
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import ProductCard from "../components/ProductCard";
+import ProductModal from "../components/ProductModal";
 import ShopFilters from "../components/ShopFilters";
 import api from "../services/api";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { cleanFilters, defaultShopFilters, isJewelleryCategory, JEWELLERY_CATEGORY, mergeCategories } from "../utils/catalog";
+import { cleanFilters, defaultShopFilters, isJewelleryCategory, JEWELLERY_CATEGORY, mergeCategories, sortOptions } from "../utils/catalog";
 
 const readFilters = (searchParams) => ({
   searchQuery: searchParams.get("searchQuery") || "",
@@ -14,7 +15,7 @@ const readFilters = (searchParams) => ({
   color: searchParams.get("color") || "",
   minPrice: searchParams.get("minPrice") || "",
   maxPrice: searchParams.get("maxPrice") || "",
-  sort: searchParams.get("sort") || "newest",
+  sort: searchParams.get("sort") || "default",
   isNewArrival: searchParams.get("isNewArrival") || ""
 });
 
@@ -25,6 +26,8 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Local filter state for immediate UI feedback (e.g. search input)
   const [localFilters, setLocalFilters] = useState(() => readFilters(searchParams));
@@ -40,6 +43,16 @@ export default function ShopPage() {
 
   const toggleFilters = () => setIsFilterOpen(!isFilterOpen);
   const closeFilters = () => setIsFilterOpen(false);
+
+  const handleProductClick = (product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
 
   // Synchronize local search with debounced URL update
   useEffect(() => {
@@ -172,7 +185,18 @@ export default function ShopPage() {
                 </p>
               </div>
               
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <select
+                  value={localFilters.sort}
+                  onChange={(event) => handleFilterChange("sort", event.target.value)}
+                  className="rounded-2xl border-0 bg-[#6d28d9] px-5 py-3 text-sm font-bold text-white shadow-xl shadow-violet-200 outline-none"
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value} className="bg-white text-stone-900">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
                 {Object.entries(cleanFilters(readFilters(searchParams))).map(([key, value]) => {
                   if (key === "sort") return null;
                   return (
@@ -234,7 +258,7 @@ export default function ShopPage() {
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <ProductCard product={product} />
+                      <ProductCard product={product} onCardClick={handleProductClick} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -290,6 +314,13 @@ export default function ShopPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Product Modal */}
+      <ProductModal 
+        product={selectedProduct} 
+        open={isModalOpen} 
+        onClose={closeModal} 
+      />
     </div>
   );
 }
