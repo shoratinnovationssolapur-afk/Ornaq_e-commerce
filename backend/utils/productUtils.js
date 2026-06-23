@@ -18,7 +18,18 @@ export const calculateDiscountPrice = (price, discountPercent = 0) => {
   return Math.max(0, Math.round(normalizedPrice * (1 - normalizedDiscount / 100)));
 };
 
-export const getEffectivePrice = (product) => Number(product.discountPrice || calculateDiscountPrice(product.price, product.discountPercent));
+export const getMarketPrice = (product = {}) => Number(product.marketPrice ?? product.price ?? 0);
+
+export const getOfferPrice = (product = {}) => {
+  const directPrice = product.offerPrice ?? product.discountPrice;
+  if (directPrice !== undefined && directPrice !== null && directPrice !== "") {
+    return Number(directPrice);
+  }
+
+  return calculateDiscountPrice(getMarketPrice(product), product.discountPercent);
+};
+
+export const getEffectivePrice = (product) => getOfferPrice(product);
 
 export const normalizeColorList = (colors = [], fallbackColor = "") => {
   const list = Array.isArray(colors)
