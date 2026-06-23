@@ -19,7 +19,7 @@ export default function ResetPasswordPage() {
         password
       });
       setMessage(response.data.message);
-      window.setTimeout(() => navigate("/login"), 1200);
+      window.setTimeout(() => navigate("/admin/login"), 1200);
     } catch (error) {
       setMessage(error.response?.data?.message || "Unable to reset password.");
     } finally {
@@ -58,7 +58,7 @@ export default function ResetPasswordPage() {
         </button>
 
         <p className="text-center text-[10px] font-black uppercase tracking-widest text-stone-400">
-          Aborting recovery? <Link to="/login" className="text-brand-700 hover:text-brand-800 underline underline-offset-4">Return to Portal</Link>
+          Aborting recovery? <Link to="/admin/login" className="text-brand-700 hover:text-brand-800 underline underline-offset-4">Return to Portal</Link>
         </p>
       </form>
     </AuthLayout>
