@@ -5,10 +5,8 @@ import { useStore } from "../context/StoreContext";
 import { useNotification } from "../context/NotificationContext";
 import { useAuth } from "../context/AuthContext";
 import PaymentModal from "../components/PaymentModal";
-import { formatCurrency } from "../utils/catalog";
+import { formatCurrency, getOfferPrice } from "../utils/catalog";
 
-const FREE_SHIPPING_THRESHOLD = 999;
-const SHIPPING_FEE = 50;
 const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 
 const loadRazorpayScript = () =>
@@ -51,7 +49,7 @@ export default function CheckoutPage() {
     return cart;
   }, [directCheckoutItem, cart]);
 
-  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [paymentMethod, setPaymentMethod] = useState("ONLINE");
   const [processing, setProcessing] = useState(false);
   const [fetchingLocation, setFetchingLocation] = useState(false); // New state for location loader
   const [error, setError] = useState("");
@@ -67,13 +65,13 @@ export default function CheckoutPage() {
 
   const checkoutSummary = useMemo(
     () => ({
-      subtotal: checkoutItems.reduce((sum, item) => sum + (item.discountPrice || item.price) * item.qty, 0),
+      subtotal: checkoutItems.reduce((sum, item) => sum + getOfferPrice(item) * item.qty, 0),
       quantity: checkoutItems.reduce((sum, item) => sum + item.qty, 0)
     }),
     [checkoutItems]
   );
   const subtotal = useMemo(() => checkoutSummary.subtotal, [checkoutSummary]);
-  const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+  const shippingFee = 0;
   const totalAmount = subtotal + shippingFee;
   const hasMissingAddressFields = !address.name || !address.phone || !address.line1 || !address.city || !address.state || !address.pincode;
 
@@ -190,7 +188,7 @@ export default function CheckoutPage() {
     setError("");
     try {
       const res = await api.post("/orders", {
-        paymentMethod: paymentMethod === "COD" ? "COD" : "RAZORPAY",
+        paymentMethod: "RAZORPAY",
         items: orderItems,
         shippingAddress: normalizedAddress
       });
@@ -267,7 +265,7 @@ export default function CheckoutPage() {
         }
         showToast({
           title: "Order placed successfully",
-          message: "You can now track the order timeline from your profile.",
+          message: "Your order has been received by ORNAQ.",
           tone: "success"
         });
       }
@@ -368,19 +366,8 @@ export default function CheckoutPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-black text-white">2</span>
               <h2 className="text-xl font-black text-stone-900">Payment Selection</h2>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className={`relative flex cursor-pointer flex-col gap-3 rounded-3xl border-2 p-6 transition-all ${paymentMethod === "COD" ? "border-brand-600 bg-brand-50/30" : "border-stone-100 bg-white hover:border-stone-200"}`}>
-                <input name="paymentMethod" type="radio" checked={paymentMethod === "COD"} onChange={() => setPaymentMethod("COD")} className="absolute right-6 top-6 h-5 w-5 text-brand-600 focus:ring-brand-500" />
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-900 text-white">
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <p className="text-sm font-black text-stone-900 uppercase tracking-wider">Cash on Delivery</p>
-                <p className="text-xs font-medium text-stone-500">Pay securely when your package arrives at your doorstep.</p>
-              </label>
-              <label className={`relative flex cursor-pointer flex-col gap-3 rounded-3xl border-2 p-6 transition-all ${paymentMethod === "ONLINE" ? "border-brand-600 bg-brand-50/30" : "border-stone-100 bg-white hover:border-stone-200"}`}>
-                <input name="paymentMethod" type="radio" checked={paymentMethod === "ONLINE"} onChange={() => setPaymentMethod("ONLINE")} className="absolute right-6 top-6 h-5 w-5 text-brand-600 focus:ring-brand-500" />
+            <div className="grid gap-4 sm:grid-cols-1">
+              <div className="rounded-3xl border-2 border-brand-600 bg-brand-50/30 p-6">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-900 text-white">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -388,7 +375,7 @@ export default function CheckoutPage() {
                 </div>
                 <p className="text-sm font-black text-stone-900 uppercase tracking-wider">Secure Online Payment</p>
                 <p className="text-xs font-medium text-stone-500">Fast and encrypted payment via UPI, Cards, or NetBanking.</p>
-              </label>
+              </div>
             </div>
           </section>
         </div>
@@ -407,7 +394,7 @@ export default function CheckoutPage() {
                     </p>
                   </div>
                   <span className="shrink-0 text-sm font-black text-stone-900">
-                    {formatCurrency((item.discountPrice || item.price) * item.qty)}
+                    {formatCurrency(getOfferPrice(item) * item.qty)}
                   </span>
                 </div>
               ))}
@@ -445,7 +432,7 @@ export default function CheckoutPage() {
             </button>
             
             <p className="mt-6 text-center text-[10px] font-bold uppercase tracking-widest text-stone-400">
-              Free delivery on orders above ₹999
+              FREE SHIPPING ALL OVER INDIA
             </p>
           </div>
 
