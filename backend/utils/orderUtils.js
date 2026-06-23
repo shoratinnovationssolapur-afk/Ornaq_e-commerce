@@ -1,7 +1,7 @@
 export const FREE_SHIPPING_THRESHOLD = 999;
-export const STANDARD_SHIPPING_FEE = 50;
+export const STANDARD_SHIPPING_FEE = 0;
 
-export const getShippingFee = (subtotal) => (subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE);
+export const getShippingFee = () => 0;
 
 export const buildInvoiceNumber = (orderId) => `ORNAC-${String(orderId).slice(-8).toUpperCase()}`;
 
