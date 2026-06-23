@@ -51,7 +51,7 @@ export const verifyRazorpayPayment = async (req, res) => {
 
   const order = await Order.findOne({
     razorpayOrderId: razorpay_order_id,
-    userId: req.user._id
+    ...(req.user?._id ? { userId: req.user._id } : {})
   });
 
   if (!order) {
@@ -72,14 +72,16 @@ export const verifyRazorpayPayment = async (req, res) => {
   } catch (error) {
     console.error("Sales register update failed:", error.message);
   }
-  await removeOrderedItemsFromCart(req.user._id, order.items);
+  await removeOrderedItemsFromCart(req.user?._id, order.items);
 
-  req.io.to(`user:${req.user._id}`).emit("paymentStatusUpdated", {
-    orderId: order._id,
-    paymentStatus: order.paymentStatus,
-    transactionId: order.transactionId
-  });
-  req.io.to(`user:${req.user._id}`).emit("order:status-updated", serializeOrder(order));
+  if (req.user?._id) {
+    req.io.to(`user:${req.user._id}`).emit("paymentStatusUpdated", {
+      orderId: order._id,
+      paymentStatus: order.paymentStatus,
+      transactionId: order.transactionId
+    });
+    req.io.to(`user:${req.user._id}`).emit("order:status-updated", serializeOrder(order));
+  }
   req.io.emit("admin:order-updated", serializeOrder(order));
 
   res.json({
