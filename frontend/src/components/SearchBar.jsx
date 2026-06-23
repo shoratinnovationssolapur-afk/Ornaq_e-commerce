@@ -2,7 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { formatCurrency, getProductImage } from "../utils/catalog";
+import { formatCurrency, getOfferPrice, getProductImage } from "../utils/catalog";
 
 const RECENT_SEARCH_KEY = "ornac_recent_searches";
 
@@ -182,7 +182,7 @@ export default function SearchBar({ mobile = false, onNavigate = () => {} }) {
                         <p className="truncate font-semibold text-stone-900">{product.name}</p>
                         <p className="truncate text-xs text-stone-500">{product.category} • {product.fabric}</p>
                       </div>
-                      <span className="text-sm font-bold text-brand-800">{formatCurrency(product.discountPrice || product.price)}</span>
+                      <span className="text-sm font-bold text-brand-800">{formatCurrency(getOfferPrice(product))}</span>
                     </Link>
                   ))}
                 </div>
