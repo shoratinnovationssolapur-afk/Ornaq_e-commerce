@@ -9,8 +9,8 @@ const emptyForm = {
   fabric: "",
   color: "",
   colorsInput: "",
-  price: "",
-  discountPercent: "",
+  marketPrice: "",
+  offerPrice: "",
   stock: "",
   sareeCode: "",
   youtubeLink: "",
@@ -23,6 +23,7 @@ const emptyForm = {
 export default function ProductEditor({ product, categories, onClose, onSaved }) {
   const [form, setForm] = useState(emptyForm);
   const [files, setFiles] = useState([]);
+  const [modelFiles, setModelFiles] = useState([]);
   const [variantFiles, setVariantFiles] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const categoryList = useMemo(() => mergeCategories(categories), [categories]);
@@ -43,6 +44,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
     if (!product) {
       setForm(emptyForm);
       setFiles([]);
+      setModelFiles([]);
       setVariantFiles({});
       return;
     }
@@ -55,8 +57,8 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
       fabric: product.fabric || "",
       color: product.color || productColors[0] || "",
       colorsInput: productColors.join(", "),
-      price: product.price || "",
-      discountPercent: product.discountPercent || 0,
+      marketPrice: product.marketPrice || product.price || "",
+      offerPrice: product.offerPrice || product.discountPrice || product.price || "",
       stock: product.stock || 0,
       sareeCode: product.sareeCode || "",
       youtubeLink: product.youtubeLink || "",
@@ -66,6 +68,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
       isNewArrival: Boolean(product.isNewArrival)
     });
     setFiles([]);
+    setModelFiles([]);
     setVariantFiles({});
   }, [product]);
 
@@ -91,9 +94,13 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
 
     try {
       let images = product.images || [];
+      let modelImages = product.modelImages || [];
 
       if (files.length) {
         images = await uploadProductImages(files);
+      }
+      if (modelFiles.length) {
+        modelImages = await uploadProductImages(modelFiles);
       }
 
       const colors = form.colorsInput
@@ -119,10 +126,12 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
         ...form,
         color: form.color || colors[0] || "",
         colors,
-        price: Number(form.price),
-        discountPercent: Number(form.discountPercent || 0),
+        price: Number(form.marketPrice),
+        marketPrice: Number(form.marketPrice),
+        offerPrice: Number(form.offerPrice || form.marketPrice),
         stock: Number(form.stock),
         images,
+        modelImages,
         variants
       });
 
@@ -192,6 +201,15 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
               <input type="file" accept="image/*" multiple onChange={(event) => setFiles(Array.from(event.target.files || []))} className="mt-4 block w-full text-sm text-stone-500" />
             </div>
 
+            <div className="rounded-[1.5rem] border border-stone-200 bg-white p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">360 model images</p>
+              <p className="mt-2 text-xs text-stone-500">{product.modelImages?.length || 0} saved frame{product.modelImages?.length === 1 ? "" : "s"}</p>
+              <input type="file" accept="image/*" multiple onChange={(event) => setModelFiles(Array.from(event.target.files || []))} className="mt-3 block w-full text-xs text-stone-500" />
+              {modelFiles.length > 0 && (
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-brand-700">{modelFiles.length} new frame{modelFiles.length === 1 ? "" : "s"} selected</p>
+              )}
+            </div>
+
             {variantColors.length > 0 && (
               <div className="space-y-3 rounded-[1.5rem] border border-stone-200 bg-white p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Color-specific images</p>
@@ -226,12 +244,12 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
                 <input type="url" value={form.youtubeLink} onChange={(event) => setForm((current) => ({ ...current, youtubeLink: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
               </div>
               <div>
-                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Price</label>
-                <input required min="0" type="number" value={form.price} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
+                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Market price</label>
+                <input required min="0" type="number" value={form.marketPrice} onChange={(event) => setForm((current) => ({ ...current, marketPrice: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
               </div>
               <div>
-                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Discount %</label>
-                <input min="0" max="90" type="number" value={form.discountPercent} onChange={(event) => setForm((current) => ({ ...current, discountPercent: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
+                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Offer price</label>
+                <input required min="0" type="number" value={form.offerPrice} onChange={(event) => setForm((current) => ({ ...current, offerPrice: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
               </div>
               <div>
                 <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Stock</label>
