@@ -3,7 +3,30 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "../context/StoreContext";
 import { useAuth } from "../context/AuthContext";
+import logoGold from "../assets/logo-gold.jpeg";
 import { JEWELLERY_CATEGORY } from "../utils/catalog";
+
+function BrandLogo({ compact = false }) {
+  return (
+    <div className="flex items-center gap-3">
+      {logoGold ? (
+        <img src={logoGold} alt="ORNAQ" className={`${compact ? "h-9 w-9" : "h-12 w-12"} object-contain rounded-full shadow-md`} />
+      ) : (
+        <span className={`${compact ? "h-11 w-11" : "h-12 w-12"} flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-lg font-black text-white shadow-2xl shadow-amber-200`}>
+          O
+        </span>
+      )}
+      <span className="leading-none">
+        <span className={`${compact ? "text-xl" : "text-2xl"} block font-black tracking-tight text-stone-900 sm:text-3xl`}>
+          ORNAQ
+        </span>
+        <span className="mt-1 block text-[10px] font-black uppercase tracking-[0.3em] text-stone-500">
+          Wear Your Story
+        </span>
+      </span>
+    </div>
+  );
+}
 
 export default function Navbar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -14,7 +37,7 @@ export default function Navbar() {
   const { cart } = useStore();
   const navigate = useNavigate();
   useEffect(() => {
-    setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
+    setCartCount(cart.reduce((sum, item) => sum + Number(item.qty || item.quantity || 0), 0));
   }, [cart]);
 
   const toggleMobileMenu = () => setIsMobileOpen(!isMobileOpen);
@@ -36,8 +59,8 @@ export default function Navbar() {
       <nav className="navbar-base">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
-          <Link to="/home" className="flex items-center space-x-2" onClick={closeMobileMenu}>
-            <span className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">ORNAQ</span>
+          <Link to="/home" className="flex items-center" onClick={closeMobileMenu} aria-label="ORNAQ home">
+            <BrandLogo />
           </Link>
 
           {/* Desktop Navigation */}
@@ -92,28 +115,20 @@ export default function Navbar() {
                 </span>
               )}
             </NavLink>
-            {user ? (
+            <NavLink
+              to="/wishlist"
+              className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
+            >
+              Wishlist
+            </NavLink>
+            {user && isAdmin && (
               <div className="flex items-center space-x-6">
                 <NavLink
-                  to="/wishlist"
-                  className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
+                  to="/admin/dashboard"
+                  className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-brand-600 hover:text-brand-700'}`}
                 >
-                  Wishlist
+                  Admin
                 </NavLink>
-                <NavLink
-                  to="/profile"
-                  className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
-                >
-                  Profile
-                </NavLink>
-                {isAdmin && (
-                  <NavLink
-                    to="/admin/dashboard"
-                    className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-brand-600 hover:text-brand-700'}`}
-                  >
-                    Admin
-                  </NavLink>
-                )}
                 <button
                   onClick={logout}
                   className="border-b-2 border-transparent px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:border-red-500 hover:text-red-600"
@@ -121,13 +136,6 @@ export default function Navbar() {
                   Sign Out
                 </button>
               </div>
-            ) : (
-              <NavLink
-                to="/login"
-                className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-zinc-500 hover:text-zinc-900'}`}
-              >
-                Sign In
-              </NavLink>
             )}
           </div>
 
@@ -163,8 +171,8 @@ export default function Navbar() {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             >
               <div className="flex items-center justify-between p-6 border-b border-zinc-100">
-                <Link to="/home" className="text-2xl font-black tracking-tight text-zinc-900" onClick={closeMobileMenu}>
-                  ORNAQ
+                <Link to="/home" onClick={closeMobileMenu} aria-label="ORNAQ home">
+                  <BrandLogo compact />
                 </Link>
                 <button
                   onClick={closeMobileMenu}
@@ -230,23 +238,15 @@ export default function Navbar() {
                   </NavLink>
 
                   <div className="mt-6">
-                    <p className="px-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Account</p>
-                    {user ? (
+                    <p className="px-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Saved</p>
+                    <NavLink to="/wishlist" className="nav-link" onClick={closeMobileMenu}>
+                      <span className="flex-1">Wishlist</span>
+                    </NavLink>
+                    {user && isAdmin && (
                       <>
-                        <NavLink to="/wishlist" className="nav-link" onClick={closeMobileMenu}>
-                          <span className="flex-1">Wishlist</span>
+                        <NavLink to="/admin/dashboard" className="nav-link text-brand-600 bg-brand-50/50" onClick={closeMobileMenu}>
+                          <span className="flex-1">Admin Dashboard</span>
                         </NavLink>
-                        <NavLink to="/profile" className="nav-link" onClick={closeMobileMenu}>
-                          <span className="flex-1">Profile</span>
-                        </NavLink>
-                        <NavLink to="/profile/orders" className="nav-link" onClick={closeMobileMenu}>
-                          <span className="flex-1">My Orders</span>
-                        </NavLink>
-                        {isAdmin && (
-                          <NavLink to="/admin/dashboard" className="nav-link text-brand-600 bg-brand-50/50" onClick={closeMobileMenu}>
-                            <span className="flex-1">Admin Dashboard</span>
-                          </NavLink>
-                        )}
                         <button
                           onClick={() => { logout(); closeMobileMenu(); }}
                           className="nav-link w-full text-left font-bold text-red-500 hover:text-red-600"
@@ -254,13 +254,6 @@ export default function Navbar() {
                           Sign Out
                         </button>
                       </>
-                    ) : (
-                      <NavLink to="/login" className="nav-link text-brand-700" onClick={closeMobileMenu}>
-                        <span className="flex-1 font-bold">Sign In to Account</span>
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14" />
-                        </svg>
-                      </NavLink>
                     )}
                   </div>
                 </nav>
