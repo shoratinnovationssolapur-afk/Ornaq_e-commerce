@@ -4,7 +4,7 @@ import api from "../services/api";
 import { useRealtime } from "../hooks/useRealtime";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import ProductEditor from "../components/admin/ProductEditor";
-import { cleanFilters, formatCurrency, getProductImage, mergeCategories } from "../utils/catalog";
+import { cleanFilters, formatCurrency, getMarketPrice, getOfferPrice, getProductImage, hasOfferPrice, mergeCategories } from "../utils/catalog";
 
 export default function ProductManagementPage() {
   const [products, setProducts] = useState([]);
@@ -148,7 +148,12 @@ export default function ProductManagementPage() {
                     <td className="px-8 py-6">
                       <span className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-brand-800">{product.category}</span>
                     </td>
-                    <td className="px-8 py-6 font-black text-stone-900">{formatCurrency(product.price)}</td>
+                    <td className="px-8 py-6">
+                      <p className="font-black text-stone-900">{formatCurrency(getOfferPrice(product))}</p>
+                      {hasOfferPrice(product) && (
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-300 line-through">{formatCurrency(getMarketPrice(product))}</p>
+                      )}
+                    </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-center">
                         <div className="flex items-center overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-xl shadow-stone-100/50">
@@ -212,7 +217,7 @@ export default function ProductManagementPage() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-brand-700">{product.category}</p>
                   <p className="mt-1 font-black text-stone-900 leading-tight">{product.name}</p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-300">{product.fabric} • {product.color}</p>
-                  <p className="mt-3 text-lg font-black text-stone-900">{formatCurrency(product.price)}</p>
+                  <p className="mt-3 text-lg font-black text-stone-900">{formatCurrency(getOfferPrice(product))}</p>
                 </div>
               </div>
               <div className="mt-8 flex items-center justify-between gap-4">
