@@ -198,3 +198,43 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-stone-300;
 }
+
+/* Reflective/shimmer effect for hero heading */
+.shine-text {
+  background: linear-gradient(90deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 25%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.3) 75%, rgba(255,255,255,0.95) 100%), linear-gradient(90deg, #fff 0%, #fff 100%);
+  background-size: 200% 100%, 100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 6px 30px rgba(0,0,0,0.45);
+  animation: shineMove 3.2s linear infinite;
+}
+
+@keyframes shineMove {
+  0% { background-position: 0% 50%, 0 0; }
+  50% { background-position: 100% 50%, 0 0; }
+  100% { background-position: 0% 50%, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shine-text { animation: none; }
+}
+
+/* Hero subtitle typography */
+.hero-subtitle {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+}
+.hero-subtitle p {
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .hero-subtitle { line-height: 1.04; }
+}
+
+@media (min-width: 1024px) {
+  .hero-subtitle { line-height: 1.02; }
+}
