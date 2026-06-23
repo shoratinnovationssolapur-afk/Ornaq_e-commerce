@@ -34,7 +34,8 @@ const productValidation = [
   body("color").optional().trim(),
   body("description").trim().notEmpty(),
   body("stock").isInt({ min: 0 }),
-  body("discountPercent").optional().isFloat({ min: 0, max: 90 }),
+  body("marketPrice").optional().isFloat({ min: 0 }),
+  body("offerPrice").optional().isFloat({ min: 0 }),
   body("images").optional().isArray()
 ];
 
@@ -46,6 +47,7 @@ router.get("/trending", getTrending);
 router.get("/discovery/:id", getProductDiscoveryFeed);
 router.get("/recommendations/:id", getRecommendations);
 router.get("/:id/serviceability/:pincode", checkServiceability);
+router.get("/saree/:code", getProductBySareeCode);
 router.get("/", getProducts);
 router.get("/:slug", getProductBySlug);
 
@@ -55,9 +57,5 @@ router.patch("/:id", protect, authorize("admin"), updateProduct);
 router.patch("/:id/stock", protect, authorize("admin"), [body("stock").isInt({ min: 0 })], validateRequest, updateStock);
 router.patch("/:id/stock/adjust", protect, authorize("admin"), [body("delta").isInt()], validateRequest, adjustStock);
 router.delete("/:id", protect, authorize("admin"), deleteProduct);
-router.get(
-   "/saree/:code",
-   getProductBySareeCode
-);
 
 export default router;
