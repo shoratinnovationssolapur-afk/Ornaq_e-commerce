@@ -105,7 +105,33 @@ const buildEstimatedDeliveryDate = (products = []) => {
   return estimated;
 };
 
+const buildOrderContact = (order, fallbackUser = null) => {
+  if (fallbackUser) return fallbackUser;
+  if (order.userId) return order.userId;
+
+  const shipping = order.shippingAddress || {};
+  return {
+    name: shipping.name || "Customer",
+    email: shipping.email || "",
+    phone: shipping.phone || ""
+  };
+};
+
+const emitToOrderUser = (io, order, event, payload) => {
+  const userId = order.userId?._id || order.userId;
+  if (userId) {
+    io.to(`user:${userId}`).emit(event, payload);
+  }
+};
+
+const canAccessOrder = (order, user) => {
+  if (String(user?.role || "").toLowerCase() === "admin") return true;
+  const userId = order.userId?._id || order.userId;
+  return userId && String(userId) === String(user?._id);
+};
+
 export const removeOrderedItemsFromCart = async (userId, orderedItems = []) => {
+  if (!userId) return;
   const cart = await Cart.findOne({ user: userId });
   if (!cart) return;
 
@@ -129,7 +155,12 @@ export const removeOrderedItemsFromCart = async (userId, orderedItems = []) => {
 
 export const createOrder = async (req, res) => {
   const { items, shippingAddress, paymentMethod } = req.body;
-  const normalizedPaymentMethod = paymentMethod || "COD";
+  const normalizedPaymentMethod = paymentMethod || "RAZORPAY";
+  
+  // Only allow online payment methods
+  if (normalizedPaymentMethod === "COD") {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Cash on Delivery is not accepted. Please use online payment." });
+  }
 
   let subtotal = 0;
   const normalizedItems = [];
@@ -154,7 +185,7 @@ export const createOrder = async (req, res) => {
       }
     }
 
-    const effectivePrice = product.discountPrice || product.price;
+    const effectivePrice = product.offerPrice || product.discountPrice || product.price;
     subtotal += effectivePrice * item.qty;
     orderedProducts.push(product);
     normalizedItems.push({
@@ -175,7 +206,7 @@ export const createOrder = async (req, res) => {
   const totalAmount = subtotal + shippingFee;
 
   const order = new Order({
-    userId: req.user._id,
+    userId: req.user?._id,
     items: normalizedItems,
     shippingAddress,
     paymentMethod: normalizedPaymentMethod,
@@ -191,17 +222,13 @@ export const createOrder = async (req, res) => {
   order.invoiceNumber = buildInvoiceNumber(order._id);
   let paymentResult = null;
 
-  if (normalizedPaymentMethod === "COD") {
-    await reduceStockForOrder(order, req.io);
-    order.orderStatus = "CONFIRMED";
-    order.statusTimeline = pushStatus(order.statusTimeline, "CONFIRMED", "Cash on delivery order confirmed.");
-  } else {
-    paymentResult = await processPayment({
-      paymentMethod: normalizedPaymentMethod,
-      orderData: {
-        orderId: order._id,
-        userId: req.user._id,
-        items: normalizedItems,
+  // All orders require online payment
+  paymentResult = await processPayment({
+    paymentMethod: normalizedPaymentMethod,
+    orderData: {
+      orderId: order._id,
+      userId: req.user?._id || "guest",
+      items: normalizedItems,
         totalAmount
       }
     });
@@ -225,15 +252,14 @@ export const createOrder = async (req, res) => {
     if (paymentResult.success) {
       await reduceStockForOrder(order, req.io);
     }
-  }
 
   await order.save();
-  if (normalizedPaymentMethod === "COD" || order.paymentStatus === "PAID") {
+  if (req.user?._id && order.paymentStatus === "PAID") {
     await removeOrderedItemsFromCart(req.user._id, normalizedItems);
   }
 
-  req.io.to(`user:${req.user._id}`).emit("orderCreated", serializeOrder(order));
-  req.io.to(`user:${req.user._id}`).emit("paymentStatusUpdated", {
+  emitToOrderUser(req.io, order, "orderCreated", serializeOrder(order));
+  emitToOrderUser(req.io, order, "paymentStatusUpdated", {
     orderId: order._id,
     paymentStatus: order.paymentStatus,
     transactionId: order.transactionId || null
@@ -241,7 +267,7 @@ export const createOrder = async (req, res) => {
   req.io.emit("order:created", serializeOrder(order));
 
   await notifyOrderUpdate({
-    user: req.user,
+    user: buildOrderContact(order, req.user),
     subject: "Your Ornac order has been placed",
     message: `Your order ${order.invoiceNumber} has been placed successfully. Total amount: Rs. ${order.totalAmount}.`,
     template: "order_placed",
@@ -291,7 +317,7 @@ export const getOrderById = async (req, res) => {
     .populate("userId", "name email phone");
 
   if (!order) return res.status(StatusCodes.NOT_FOUND).json({ message: "Order not found" });
-  if (String(order.userId._id) !== String(req.user._id) && String(req.user.role).toLowerCase() !== "admin") {
+  if (!canAccessOrder(order, req.user)) {
     return res.status(StatusCodes.FORBIDDEN).json({ message: "Forbidden" });
   }
   res.json(serializeOrder(order));
@@ -300,7 +326,7 @@ export const getOrderById = async (req, res) => {
 export const cancelOrder = async (req, res) => {
   const order = await Order.findById(resolveOrderId(req)).populate("userId", "name email phone");
   if (!order) return res.status(StatusCodes.NOT_FOUND).json({ message: "Order not found" });
-  if (String(order.userId._id) !== String(req.user._id) && String(req.user.role).toLowerCase() !== "admin") {
+  if (!canAccessOrder(order, req.user)) {
     return res.status(StatusCodes.FORBIDDEN).json({ message: "Forbidden" });
   }
   if (!canCancelOrder(order.orderStatus)) {
@@ -320,11 +346,11 @@ export const cancelOrder = async (req, res) => {
   }
   await order.save();
 
-  req.io.to(`user:${order.userId._id}`).emit("order:status-updated", serializeOrder(order));
+  emitToOrderUser(req.io, order, "order:status-updated", serializeOrder(order));
   req.io.emit("admin:order-updated", serializeOrder(order));
 
   await notifyOrderUpdate({
-    user: order.userId,
+    user: buildOrderContact(order),
     subject: "Your Ornac order has been cancelled",
     message: `Your order ${order.invoiceNumber} has been cancelled.`,
     template: "order_cancelled",
@@ -337,7 +363,7 @@ export const cancelOrder = async (req, res) => {
 export const requestReturn = async (req, res) => {
   const order = await Order.findById(resolveOrderId(req)).populate("userId", "name email phone");
   if (!order) return res.status(StatusCodes.NOT_FOUND).json({ message: "Order not found" });
-  if (String(order.userId._id) !== String(req.user._id)) {
+  if (!canAccessOrder(order, req.user) || String(req.user?.role || "").toLowerCase() === "admin") {
     return res.status(StatusCodes.FORBIDDEN).json({ message: "Forbidden" });
   }
   if (!canRequestReturn(order.orderStatus, order.returnRequest?.status)) {
@@ -362,7 +388,7 @@ export const requestReturn = async (req, res) => {
   order.statusTimeline = pushStatus(order.statusTimeline, "RETURN_REQUESTED", order.returnRequest.reason);
   await order.save();
 
-  req.io.to(`user:${order.userId._id}`).emit("order:status-updated", serializeOrder(order));
+  emitToOrderUser(req.io, order, "order:status-updated", serializeOrder(order));
   req.io.emit("admin:order-updated", serializeOrder(order));
 
   res.json(serializeOrder(order));
@@ -371,7 +397,7 @@ export const requestReturn = async (req, res) => {
 export const reorderOrder = async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (!order) return res.status(StatusCodes.NOT_FOUND).json({ message: "Order not found" });
-  if (String(order.userId) !== String(req.user._id)) {
+  if (!order.userId || String(order.userId) !== String(req.user._id)) {
     return res.status(StatusCodes.FORBIDDEN).json({ message: "Forbidden" });
   }
 
@@ -402,7 +428,7 @@ export const getInvoice = async (req, res) => {
     .populate("userId", "name email phone")
     .populate("items.product", "category");
   if (!order) return res.status(StatusCodes.NOT_FOUND).json({ message: "Order not found" });
-  if (String(order.userId._id) !== String(req.user._id) && String(req.user.role).toLowerCase() !== "admin") {
+  if (!canAccessOrder(order, req.user)) {
     return res.status(StatusCodes.FORBIDDEN).json({ message: "Forbidden" });
   }
 
@@ -412,17 +438,13 @@ export const getInvoice = async (req, res) => {
   res.send(document.buffer);
 };
 
-export const updateOrderStatus = async (req, res) => {
+const legacyUpdateOrderStatusUnused = async (req, res) => {
   const order = await Order.findById(req.params.id).populate("userId", "name email phone");
   if (!order) return res.status(StatusCodes.NOT_FOUND).json({ message: "Order not found" });
 
   const previousStatus = order.orderStatus;
   order.orderStatus = req.body.orderStatus;
   order.statusTimeline = pushStatus(order.statusTimeline, req.body.orderStatus, req.body.note || "Status updated by admin.");
-
-  if (req.body.orderStatus === "DELIVERED" && order.paymentMethod === "COD") {
-    order.paymentStatus = "PAID";
-  }
 
   if (req.body.orderStatus === "CANCELLED") {
     applyRefund(order, req.body.note || "Cancelled by admin");
@@ -433,7 +455,7 @@ export const updateOrderStatus = async (req, res) => {
 
   if (req.body.orderStatus === "SHIPPED") {
     await notifyOrderUpdate({
-      user: order.userId,
+      user: buildOrderContact(order),
       subject: "Your Ornac order has shipped",
       message: `Your order ${order.invoiceNumber} has shipped and is on the way.`,
       template: "order_shipped",
@@ -441,11 +463,21 @@ export const updateOrderStatus = async (req, res) => {
     });
   }
 
+  if (req.body.orderStatus === "OUT_FOR_DELIVERY") {
+    await notifyOrderUpdate({
+      user: buildOrderContact(order),
+      subject: "Your Ornac order is out for delivery today",
+      message: `Your order ${order.invoiceNumber} is out for delivery today and will reach your home shortly. Please keep your phone available for the delivery partner.`,
+      template: "order_out_for_delivery",
+      meta: { orderId: String(order._id), status: order.orderStatus }
+    });
+  }
+
   if (req.body.orderStatus === "DELIVERED") {
     await notifyOrderUpdate({
-      user: order.userId,
+      user: buildOrderContact(order),
       subject: "Your Ornac order has been delivered",
-      message: `Your order ${order.invoiceNumber} has been delivered successfully.`,
+      message: `Your order ${order.invoiceNumber} has been delivered to your home today. Thank you for shopping with us.`,
       template: "order_delivered",
       meta: { orderId: String(order._id), status: order.orderStatus }
     });
@@ -457,7 +489,7 @@ export const updateOrderStatus = async (req, res) => {
     // Attempt the compilation and database commit
     await order.save();
 
-    if (normalizedPaymentMethod === "COD" || order.paymentStatus === "PAID") {
+    if (order.paymentStatus === "PAID") {
       await Cart.findOneAndUpdate({ user: req.user._id }, { $set: { items: [] } });
     }
 
@@ -504,4 +536,56 @@ export const updateOrderStatus = async (req, res) => {
       message: dbError.message || "An unhandled transaction anomaly occurred during execution."
     });
   }
+};
+
+export const updateOrderStatus = async (req, res) => {
+  const order = await Order.findById(req.params.id).populate("userId", "name email phone");
+  if (!order) return res.status(StatusCodes.NOT_FOUND).json({ message: "Order not found" });
+
+  const previousStatus = order.orderStatus;
+  const nextStatus = req.body.orderStatus;
+  order.orderStatus = nextStatus;
+  order.statusTimeline = pushStatus(order.statusTimeline, nextStatus, req.body.note || "Status updated by admin.");
+
+  if (nextStatus === "CANCELLED") {
+    applyRefund(order, req.body.note || "Cancelled by admin");
+    if (STOCK_SENSITIVE_STATUSES.has(previousStatus)) {
+      await restoreStockForOrder(order, req.io);
+    }
+  }
+
+  if (nextStatus === "SHIPPED") {
+    await notifyOrderUpdate({
+      user: buildOrderContact(order),
+      subject: "Your Ornac order has shipped",
+      message: `Your order ${order.invoiceNumber} has shipped and is on the way.`,
+      template: "order_shipped",
+      meta: { orderId: String(order._id), status: order.orderStatus }
+    });
+  }
+
+  if (nextStatus === "OUT_FOR_DELIVERY") {
+    await notifyOrderUpdate({
+      user: buildOrderContact(order),
+      subject: "Your Ornac order is out for delivery today",
+      message: `Your order ${order.invoiceNumber} is out for delivery today and will reach your home shortly. Please keep your phone available for the delivery partner.`,
+      template: "order_out_for_delivery",
+      meta: { orderId: String(order._id), status: order.orderStatus }
+    });
+  }
+
+  if (nextStatus === "DELIVERED") {
+    await notifyOrderUpdate({
+      user: buildOrderContact(order),
+      subject: "Your Ornac order has been delivered",
+      message: `Your order ${order.invoiceNumber} has been delivered to your home today. Thank you for shopping with us.`,
+      template: "order_delivered",
+      meta: { orderId: String(order._id), status: order.orderStatus }
+    });
+  }
+
+  await order.save();
+  emitToOrderUser(req.io, order, "order:status-updated", serializeOrder(order));
+  req.io.emit("admin:order-updated", serializeOrder(order));
+  return res.json(serializeOrder(order));
 };
