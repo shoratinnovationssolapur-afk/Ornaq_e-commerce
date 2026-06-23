@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
+import ProductMediaViewer from "../components/ProductMediaViewer";
 import api, { getApiErrorMessage } from "../services/api";
-import { formatCurrency, getProductImage } from "../utils/catalog";
+import { formatCurrency, getMarketPrice, getOfferPrice, hasOfferPrice } from "../utils/catalog";
 
 const ProductDetails = () => {
   const { code } = useParams();
@@ -35,7 +36,9 @@ const ProductDetails = () => {
   const selectedColor = product?.color || product?.colors?.[0] || "";
   const availableStock = Number(product?.stock ?? 0);
   const isOutOfStock = availableStock <= 0;
-  const effectivePrice = product?.discountPrice || product?.price || 0;
+  const effectivePrice = getOfferPrice(product);
+  const marketPrice = getMarketPrice(product);
+  const showOffer = hasOfferPrice(product);
 
   const buyNow = () => {
     if (!product || isOutOfStock) return;
@@ -73,8 +76,8 @@ const ProductDetails = () => {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
       <div className="grid gap-8 overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-xl shadow-stone-100 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <div className="aspect-[4/5] bg-stone-50 md:aspect-auto">
-          <img src={getProductImage(product, selectedColor)} alt={product.name} className="h-full w-full object-cover" />
+        <div className="bg-stone-50 p-4 md:p-5">
+          <ProductMediaViewer product={product} galleryImages={product.images || []} selectedColor={selectedColor} />
         </div>
 
         <div className="flex flex-col justify-center p-6 sm:p-8">
@@ -88,12 +91,10 @@ const ProductDetails = () => {
 
           <div className="mt-6 flex flex-wrap items-baseline gap-3">
             <p className="text-3xl font-black text-stone-900">{formatCurrency(effectivePrice)}</p>
-            {Number(product.discountPercent || 0) > 0 && (
+            {showOffer && (
               <>
-                <span className="text-base font-bold text-stone-300 line-through">{formatCurrency(product.price)}</span>
-                <span className="rounded-lg bg-red-100 px-2 py-1 text-xs font-black text-red-600">
-                  SAVE {product.discountPercent}%
-                </span>
+                <span className="text-base font-bold text-stone-300 line-through">{formatCurrency(marketPrice)}</span>
+                <span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">Offer price</span>
               </>
             )}
           </div>
