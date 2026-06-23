@@ -5,11 +5,11 @@ export const JEWELLERY_CATEGORY = "Imitation Jewellery";
 export const categoryOptions = ["Silk", "Paithani", "Cotton", "Wedding Sarees", JEWELLERY_CATEGORY];
 
 export const sortOptions = [
-  { label: "Newest first", value: "newest" },
-  { label: "Price: Low to High", value: "priceAsc" },
-  { label: "Price: High to Low", value: "priceDesc" },
-  { label: "Trending", value: "trending" },
-  { label: "Bestselling", value: "bestselling" }
+  { label: "Default sorting", value: "default" },
+  { label: "Sort by popularity", value: "popularity" },
+  { label: "Sort by latest", value: "latest" },
+  { label: "Sort by price: low to high", value: "priceAsc" },
+  { label: "Sort by price: high to low", value: "priceDesc" }
 ];
 
 export const defaultShopFilters = {
@@ -19,7 +19,7 @@ export const defaultShopFilters = {
   color: "",
   minPrice: "",
   maxPrice: "",
-  sort: "newest",
+  sort: "default",
   isNewArrival: ""
 };
 
@@ -51,6 +51,15 @@ export const getProductImage = (product, selectedColor = "") => {
 
   return selectedVariant?.images?.[0]?.url || product?.images?.[0]?.url || defaultProductImage;
 };
+
+export const getProductModelImages = (product) =>
+  Array.isArray(product?.modelImages) ? product.modelImages.filter((image) => image?.url) : [];
+
+export const getMarketPrice = (product) => Number(product?.marketPrice ?? product?.price ?? 0);
+
+export const getOfferPrice = (product) => Number(product?.offerPrice ?? product?.discountPrice ?? product?.price ?? 0);
+
+export const hasOfferPrice = (product) => getMarketPrice(product) > getOfferPrice(product);
 
 export const getProductColors = (product) => {
   const colors = Array.isArray(product?.colors) ? product.colors.filter(Boolean) : [];
