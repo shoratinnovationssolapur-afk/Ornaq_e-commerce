@@ -14,7 +14,7 @@ export default function AddProductPage() {
     description: "",
     classifications: "",
     youtubeLink: "",
-    category: "Silk",
+    category: "", // Changed from "Silk" to an empty string for text input initialization
     fabric: "",
     color: "",
     colorsInput: "",
@@ -70,7 +70,7 @@ export default function AddProductPage() {
     if (!imageFiles.length) return [];
 
     const formData = new FormData();
-    imageFiles.forEach((file) => formData.append("images", file));
+    formData.append("images", file);
     const uploadResponse = await api.post("/uploads/products", formData, {
       headers: { "Content-Type": "multipart/form-data" }
     });
@@ -197,12 +197,17 @@ export default function AddProductPage() {
                       className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
                     />
                   </div>
+                  
+                  {/* Category Section - Updated from Select to Text Input Input field */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">
                       Category
                     </label>
 
-                    <select
+                    <input
+                      required
+                      type="text"
+                      placeholder="e.g. Silk, Linen, Jewellery"
                       value={form.category}
                       onChange={(event) =>
                         setForm((current) => ({
@@ -210,15 +215,10 @@ export default function AddProductPage() {
                           category: event.target.value,
                         }))
                       }
-                      className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-black border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
-                    >
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
+                      className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
+                    />
                   </div>
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">{formIsJewellery ? "Material" : "Fabric"}</label>
                     <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder={formIsJewellery ? "Alloy, Brass, Beads, etc." : "Silk, Cotton, etc."} value={form.fabric} onChange={(event) => setForm((current) => ({ ...current, fabric: event.target.value }))} />
