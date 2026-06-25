@@ -116,7 +116,7 @@ export default function ProductPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
                 <h1 className="text-2xl font-black tracking-tight text-stone-900 sm:text-4xl">{product.name}</h1>
-                <p className="text-sm font-bold uppercase tracking-widest text-brand-700">{product.category} • {product.fabric}</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-brand-700">{product.classification} • {product.fabric}</p>
               </div>
               <div className="flex shrink-0 items-center gap-1 rounded-full bg-stone-900 px-3 py-1.5 text-white shadow-lg shadow-stone-200">
                 <span className="text-sm font-black">{Number(product.averageRating || 0).toFixed(1)}</span>
