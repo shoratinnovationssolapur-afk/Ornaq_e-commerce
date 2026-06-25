@@ -14,7 +14,7 @@ export default function AddProductPage() {
     description: "",
     classifications: "",
     youtubeLink: "",
-    category: "", // Changed from "Silk" to an empty string for text input initialization
+    category: "", 
     fabric: "",
     color: "",
     colorsInput: "",
@@ -24,13 +24,16 @@ export default function AddProductPage() {
     deliveryEstimateMinDays: 3,
     deliveryEstimateMaxDays: 5,
     featured: false,
-    isNewArrival: true
+    isNewArrival: true,
+    categoryCoverImage: null // Holds the file object for the category cover image
   });
+  const [categoryImagePreview, setCategoryImagePreview] = useState(""); // URL for layout preview
   const [files, setFiles] = useState([]);
   const [modelFiles, setModelFiles] = useState([]);
   const [variantFiles, setVariantFiles] = useState({});
   const [previews, setPreviews] = useState([]);
   const [modelPreviews, setModelPreviews] = useState([]);
+  
   const categories = useMemo(() => mergeCategories(metadata.categories), [metadata.categories]);
   const formIsJewellery = isJewelleryCategory(form.category);
   const variantColors = useMemo(
@@ -55,6 +58,14 @@ export default function AddProductPage() {
     setPreviews(selectedFiles.map((file) => URL.createObjectURL(file)));
   };
 
+  const handleCategoryCoverChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setForm((current) => ({ ...current, categoryCoverImage: file }));
+      setCategoryImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleVariantFileChange = (color, event) => {
     const selectedFiles = Array.from(event.target.files || []);
     setVariantFiles((current) => ({ ...current, [color]: selectedFiles }));
@@ -70,7 +81,7 @@ export default function AddProductPage() {
     if (!imageFiles.length) return [];
 
     const formData = new FormData();
-    formData.append("images", file);
+    imageFiles.forEach((file) => formData.append("images", file));
     const uploadResponse = await api.post("/uploads/products", formData, {
       headers: { "Content-Type": "multipart/form-data" }
     });
@@ -84,6 +95,13 @@ export default function AddProductPage() {
     try {
       const images = await uploadProductImages(files);
       const modelImages = await uploadProductImages(modelFiles);
+      
+      // Upload Category cover image if it exists
+      let uploadedCategoryCover = "";
+      if (form.categoryCoverImage) {
+        const coverResult = await uploadProductImages([form.categoryCoverImage]);
+        uploadedCategoryCover = coverResult[0] || "";
+      }
 
       const colors = form.colorsInput
         .split(",")
@@ -112,7 +130,8 @@ export default function AddProductPage() {
         stock: Number(form.stock),
         images,
         modelImages,
-        variants
+        variants,
+        categoryCover: uploadedCategoryCover // Pass along the parsed image source string
       });
 
       navigate("/admin/products");
@@ -177,59 +196,56 @@ export default function AddProductPage() {
             <section className="space-y-8 rounded-[3rem] border border-stone-50 bg-white p-8 shadow-2xl shadow-stone-100 sm:p-10">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700 mb-6">Material Attributes</p>
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-6">
+                  
+                  {/* Row Containing Classification standalone */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">
-                      Classification
-                    </label>
-
-                    <input
-                      required
-                      type="text"
-                      placeholder="Premium Saree"
-                      value={form.classification}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          classification: event.target.value,
-                        }))
-                      }
-                      className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
-                    />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Classification</label>
+                    <input required type="text" placeholder="Premium Saree" value={form.classification} onChange={(event) => setForm((current) => ({ ...current, classification: event.target.value }))} className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" />
                   </div>
                   
-                  {/* Category Section - Updated from Select to Text Input Input field */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">
-                      Category
-                    </label>
-
-                    <input
-                      required
-                      type="text"
-                      placeholder="e.g. Silk, Linen, Jewellery"
-                      value={form.category}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          category: event.target.value,
-                        }))
-                      }
-                      className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
-                    />
+                  {/* Splitting Category and its corresponding Cover Image into a side-by-side flexbox wrapper */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 items-end">
+                    <div className="space-y-2 sm:col-span-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Category</label>
+                      <input required type="text" placeholder="e.g. Silk, Linen, Jewellery" value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))} className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" />
+                    </div>
+                    
+                    {/* Category Cover Image Box Slot */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Category Cover</label>
+                      <div className="relative h-14 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 flex items-center justify-center overflow-hidden hover:border-brand-400 transition-colors cursor-pointer group">
+                        <input type="file" accept="image/*" onChange={handleCategoryCoverChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                        {categoryImagePreview ? (
+                          <img src={categoryImagePreview} alt="Category preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="text-center">
+                            <span className="text-sm text-stone-400 font-bold">+</span>
+                            <span className="block text-[8px] font-black text-stone-400 uppercase tracking-tighter">Cover</span>
+                          </div>
+                        )}
+                        {categoryImagePreview && (
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
+                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Change</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">{formIsJewellery ? "Material" : "Fabric"}</label>
-                    <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder={formIsJewellery ? "Alloy, Brass, Beads, etc." : "Silk, Cotton, etc."} value={form.fabric} onChange={(event) => setForm((current) => ({ ...current, fabric: event.target.value }))} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Primary Color</label>
-                    <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Ruby Red" value={form.color} onChange={(event) => setForm((current) => ({ ...current, color: event.target.value }))} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Variant Palette</label>
-                    <input className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Red, Gold, Ivory" value={form.colorsInput} onChange={(event) => setForm((current) => ({ ...current, colorsInput: event.target.value }))} />
+                  <div className="grid gap-6 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">{formIsJewellery ? "Material" : "Fabric"}</label>
+                      <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder={formIsJewellery ? "Alloy" : "Silk"} value={form.fabric} onChange={(event) => setForm((current) => ({ ...current, fabric: event.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Primary Color</label>
+                      <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Ruby Red" value={form.color} onChange={(event) => setForm((current) => ({ ...current, color: event.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Variant Palette</label>
+                      <input className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Red, Gold" value={form.colorsInput} onChange={(event) => setForm((current) => ({ ...current, colorsInput: event.target.value }))} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -269,58 +285,76 @@ export default function AddProductPage() {
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700 mb-6">Visual Artifacts</p>
                 <div className="space-y-6">
-                  <div className="relative group">
-                    <input type="file" multiple accept="image/*" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                    <div className="flex flex-col items-center justify-center rounded-[2.5rem] border-2 border-dashed border-stone-100 bg-stone-50 py-10 transition-all group-hover:bg-stone-100 group-hover:border-stone-200">
-                      <div className="mb-3 text-2xl">📸</div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Capture visual assets</p>
-                      <p className="mt-1 text-[8px] font-bold text-stone-300">Multiple files supported</p>
-                    </div>
-                  </div>
-                  {previews.length > 0 && (
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Master Product Images</label>
                     <div className="grid grid-cols-4 gap-3">
                       {previews.map((src, index) => (
-                        <div key={index} className="aspect-[3/4] overflow-hidden rounded-xl bg-stone-50">
+                        <div key={index} className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-stone-50 border border-stone-100 shadow-sm group">
                           <img src={src} alt="Preview" className="h-full w-full object-cover" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {variantColors.length > 0 && (
-                    <div className="space-y-4 border-t border-stone-100 pt-6">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Color-specific images</p>
-                      {variantColors.map((color) => (
-                        <div key={color} className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: color.toLowerCase() }} />
-                              <span className="text-sm font-black text-stone-700">{color}</span>
-                            </div>
-                            <input type="file" multiple accept="image/*" onChange={(event) => handleVariantFileChange(color, event)} className="max-w-[12rem] text-xs text-stone-500" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Slot {index + 1}</span>
                           </div>
-                          {variantFiles[color]?.length > 0 && (
-                            <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-brand-700">{variantFiles[color].length} image{variantFiles[color].length === 1 ? "" : "s"} selected</p>
-                          )}
                         </div>
                       ))}
-                    </div>
-                  )}
-                  <div className="space-y-4 border-t border-stone-100 pt-6">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">360 model images</p>
-                    <div className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
-                      <p className="text-xs font-bold text-stone-500">Upload front, side, back, and side images in order. The storefront will spin them like a model view.</p>
-                      <input type="file" multiple accept="image/*" onChange={handleModelFileChange} className="mt-4 block w-full text-xs text-stone-500" />
-                      {modelPreviews.length > 0 && (
-                        <div className="mt-4 grid grid-cols-4 gap-3">
-                          {modelPreviews.map((src, index) => (
-                            <div key={src} className="aspect-square overflow-hidden rounded-xl bg-white">
-                              <img src={src} alt={`360 preview ${index + 1}`} className="h-full w-full object-cover" />
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      
+                      <div className="relative aspect-[3/4] flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50/50 hover:bg-stone-50 hover:border-brand-400 transition-all cursor-pointer">
+                        <input type="file" multiple accept="image/*" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                        <span className="text-xl text-stone-400 font-light">+</span>
+                        <span className="text-[9px] font-black text-stone-400 uppercase tracking-wider mt-1">Upload</span>
+                      </div>
                     </div>
                   </div>
+
+                  {variantColors.length > 0 && (
+                    <div className="space-y-4 border-t border-stone-100 pt-6">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Color Variant Slots</p>
+                      {variantColors.map((color) => (
+                        <div key={color} className="rounded-2xl border border-stone-100 bg-stone-50/40 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: color.toLowerCase() }} />
+                            <span className="text-xs font-black uppercase tracking-wider text-stone-700">{color} Palette</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 bg-white p-3 rounded-xl border border-stone-100 shadow-sm relative hover:border-brand-300 transition-colors">
+                            <div className="h-10 w-10 rounded-lg bg-stone-50 flex items-center justify-center border border-stone-100 text-lg">🎨</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-stone-800 uppercase tracking-wide truncate">
+                                {variantFiles[color]?.length > 0 ? `${variantFiles[color].length} Assets Attached` : "No Media Hooked"}
+                              </p>
+                              <p className="text-[9px] font-medium text-stone-400 mt-0.5">Click container to drop variant visuals</p>
+                            </div>
+                            <input type="file" multiple accept="image/*" onChange={(event) => handleVariantFileChange(color, event)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-4 border-t border-stone-100 pt-6">
+                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">360 Frame Model View Array</label>
+                    <div className="rounded-3xl border border-stone-100 bg-stone-50/30 p-5">
+                      <p className="text-[10px] font-medium leading-relaxed text-stone-400 mb-4">
+                        Curate sequenced frame snapshots (Front → Right Profile → Back → Left Profile).
+                      </p>
+                      
+                      <div className="grid grid-cols-4 gap-3">
+                        {modelPreviews.map((src, index) => (
+                          <div key={src} className="relative aspect-square overflow-hidden rounded-xl bg-white border border-stone-100 shadow-inner">
+                            <img src={src} alt={`360 frame view ${index + 1}`} className="h-full w-full object-cover" />
+                            <span className="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] font-black text-white uppercase">{index + 1}F</span>
+                          </div>
+                        ))}
+                        
+                        <div className="relative aspect-square flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-stone-200 bg-white hover:border-brand-400 transition-colors cursor-pointer">
+                          <input type="file" multiple accept="image/*" onChange={handleModelFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                          <span className="text-lg text-stone-400 font-light">+</span>
+                          <span className="text-[8px] font-black text-stone-400 uppercase tracking-widest mt-0.5">Frames</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </section>
