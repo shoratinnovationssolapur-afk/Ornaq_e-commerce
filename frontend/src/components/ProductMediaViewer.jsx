@@ -74,14 +74,13 @@ export default function ProductMediaViewer({ product, galleryImages = [], select
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-[3/4] overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-sm sm:aspect-[4/5] lg:aspect-square cursor-pointer group">
-        <img
-          src={displayUrl}
-          alt={product.name}
-          onClick={handleImageClick}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:opacity-95"
-          style={{ transform: `scale(${zoom})` }}
-        />
+<div className="relative flex h-[650px] items-center justify-center overflow-hidden rounded-3xl border border-stone-100 bg-stone-50">
+       <img
+    src={displayUrl}
+    alt={product.name}
+    className="max-h-full max-w-full object-contain transition-transform duration-300"
+    style={{ transform: `scale(${zoom})` }}
+/>
         {product.isNewArrival && (
           <span className="absolute left-4 top-4 rounded-full bg-amber-400 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">
             New Arrival
@@ -167,7 +166,7 @@ export default function ProductMediaViewer({ product, galleryImages = [], select
                 mode === "gallery" && activeImage === image.url ? "border-brand-500 scale-95" : "border-transparent opacity-60 hover:opacity-100"
               }`}
             >
-              <img src={image.url} alt={product.name} className="h-full w-full object-cover" />
+              <img src={image.url} alt={product.name} className="h-full w-full object-contain bg-white" />
             </button>
           ))}
         </div>
