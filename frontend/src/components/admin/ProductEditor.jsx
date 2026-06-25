@@ -5,6 +5,7 @@ import { getProductColors, getProductImage, isJewelleryCategory, mergeCategories
 const emptyForm = {
   name: "",
   description: "",
+  classification: "",
   category: "Silk",
   fabric: "",
   color: "",
@@ -53,6 +54,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
     setForm({
       name: product.name || "",
       description: product.description || "",
+      classification: product.classification || "",
       category: product.category || "Silk",
       fabric: product.fabric || "",
       color: product.color || productColors[0] || "",
@@ -124,6 +126,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
 
       await api.patch(`/products/${product._id}`, {
         ...form,
+        classification: form.classification,
         color: form.color || colors[0] || "",
         colors,
         price: Number(form.marketPrice),
@@ -168,9 +171,27 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
               <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Description</label>
               <textarea required rows={5} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
             </div>
-
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
+                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">
+                  Classification
+                </label>
+
+                <input
+                  required
+                  value={form.classification}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      classification: event.target.value,
+                    }))
+                  }
+                  placeholder="Premium Saree"
+                  className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+                />
+              </div>
+              <div>
+
                 <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Category</label>
                 <select value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))} className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100">
                   {categoryList.map((category) => (
