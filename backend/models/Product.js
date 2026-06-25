@@ -58,6 +58,11 @@ const productSchema = new mongoose.Schema(
     analytics: { type: analyticsSchema, default: () => ({}) },
     averageRating: { type: Number, default: 0, min: 0, max: 5 },
     totalReviews: { type: Number, default: 0, min: 0 },
+    classification: {
+  type: String,
+  required: true,
+  trim: true,
+},
     deliveryEstimate: {
       minDays: { type: Number, default: 3, min: 1 },
       maxDays: { type: Number, default: 5, min: 1 }
