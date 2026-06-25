@@ -88,7 +88,7 @@ export default function ProductExpandedPreview({ product, open, onClose }) {
                       transition={{ delay: 0.3 }}
                       className="mt-2 text-sm font-bold uppercase tracking-[0.2em] text-stone-500"
                     >
-                      {product.fabric} • {product.category}
+                      {product.fabric} • {product.classification}
                     </motion.p>
 
                     {/* Pricing */}
