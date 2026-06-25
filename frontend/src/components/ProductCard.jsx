@@ -98,7 +98,7 @@ export default function ProductCard({ product, dark = false, onCardClick }) {
             </button>
           </div>
           <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
-            {product.fabric} • {product.category}
+            {product.fabric} • {product.classification}
           </p>
         </div>
 
