@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useMemo } from "react"; // Added useMemo
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
 import { formatCurrency, getMarketPrice, getOfferPrice, getProductColors, getProductImage, hasOfferPrice } from "../utils/catalog";
@@ -8,6 +9,31 @@ export default function ProductModal({ product, open, onClose }) {
   const navigate = useNavigate();
   const { addToCart, toggleWishlist, wishlist } = useStore();
   
+  // Track active selected color
+  const [selectedColor, setSelectedColor] = useState("");
+
+  // Auto-initialize color selection when the modal opens with a new product
+  useEffect(() => {
+    if (product) {
+      const colors = getProductColors(product);
+      setSelectedColor(colors.length > 0 ? colors[0] : "");
+    }
+  }, [product, open]);
+  
+  // MATCHING REFERENCE FILE LOGIC: Find the active variant based on the selected color
+  const activeVariant = useMemo(() => {
+    return product?.variants?.find(
+      (variant) => String(variant.color).toLowerCase() === String(selectedColor).toLowerCase()
+    ) || null;
+  }, [product, selectedColor]);
+
+  // MATCHING REFERENCE FILE LOGIC: Update gallery images when variant changes
+  const galleryImages = useMemo(() => {
+    if (!product) return [];
+    if (activeVariant?.images?.length) return activeVariant.images;
+    return product.images || [];
+  }, [product, activeVariant]);
+
   if (!product) return null;
 
   const showOffer = hasOfferPrice(product);
@@ -17,12 +43,12 @@ export default function ProductModal({ product, open, onClose }) {
   const productColors = getProductColors(product);
 
   const handleAddToCart = () => {
-    addToCart(product, 1, product.color);
+    addToCart(product, 1, selectedColor || product.color);
     onClose();
   };
 
   const handleBuyNow = () => {
-    addToCart(product, 1, product.color);
+    addToCart(product, 1, selectedColor || product.color);
     onClose();
     navigate("/checkout");
   };
@@ -58,13 +84,18 @@ export default function ProductModal({ product, open, onClose }) {
             <div className="grid grid-cols-1 gap-8 p-8 sm:p-12 md:grid-cols-2 lg:gap-12">
               {/* Product Media */}
               <div className="flex flex-col">
-                <ProductMediaViewer product={product} galleryImages={product.images} />
+                {/* Fixed: Passing computed galleryImages and selectedColor */}
+                <ProductMediaViewer 
+                  product={product} 
+                  galleryImages={galleryImages} 
+                  selectedColor={selectedColor} 
+                />
               </div>
 
               {/* Product Details */}
               <div className="flex flex-col justify-between">
                 <div>
-                  <h1 className="text-3xl font-black leading-tight text-stone-900 uppercase tracking-tight sm:text-4xl">
+                  <h1 className="text-3xl font-black tracking-tight text-stone-900 uppercase sm:text-4xl">
                     {product.name}
                   </h1>
                   <p className="mt-2 text-sm font-bold uppercase tracking-[0.2em] text-stone-500">
@@ -98,19 +129,32 @@ export default function ProductModal({ product, open, onClose }) {
                     </div>
                   )}
 
-                  {/* Colors */}
+                  {/* Colors Swatch Selection Grid */}
                   {productColors.length > 0 && (
                     <div className="mt-8">
                       <h3 className="text-xs font-black uppercase tracking-[0.2em] text-stone-700">Available Colors</h3>
                       <div className="mt-3 flex flex-wrap gap-3">
-                        {productColors.map((color) => (
-                          <div
-                            key={color}
-                            className="h-8 w-8 rounded-full border-2 border-stone-200 ring-1 ring-stone-100 transition-all hover:ring-2 hover:ring-brand-500"
-                            style={{ backgroundColor: color.toLowerCase() }}
-                            title={color}
-                          />
-                        ))}
+                        {productColors.map((color) => {
+                          const isSelected = selectedColor.toLowerCase() === color.toLowerCase();
+                          return (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => setSelectedColor(color)}
+                              className={`flex min-h-[2.5rem] items-center gap-2 rounded-xl border-2 px-4 py-1.5 transition-all active:scale-95 ${
+                                isSelected 
+                                  ? "border-stone-900 bg-stone-50 text-stone-900 font-bold shadow-sm" 
+                                  : "border-stone-100 bg-stone-50/50 text-stone-600 hover:border-stone-200"
+                              }`}
+                            >
+                              <div 
+                                className="h-3.5 w-3.5 rounded-full border border-black/10" 
+                                style={{ backgroundColor: color.toLowerCase() }} 
+                              />
+                              <span className="text-xs font-semibold">{color}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
