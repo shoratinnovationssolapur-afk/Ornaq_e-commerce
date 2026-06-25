@@ -9,15 +9,24 @@ import { JEWELLERY_CATEGORY } from "../utils/catalog";
 function BrandLogo({ compact = false }) {
   return (
     <div className="flex items-center gap-3">
-      {logoGold ? (
-        <img src={logoGold} alt="ORNAQ" className={`${compact ? "h-9 w-9" : "h-12 w-12"} object-contain rounded-full shadow-md`} />
-      ) : (
-        <span className={`${compact ? "h-11 w-11" : "h-12 w-12"} flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-lg font-black text-white shadow-2xl shadow-amber-200`}>
-          O
-        </span>
-      )}
+      <div
+        className={`${
+          compact ? "h-9 w-9" : "h-12 w-12"
+        } overflow-hidden rounded-full shadow-md flex-shrink-0`}
+      >
+        <img
+          src={logoGold}
+          alt="ORNAQ"
+          className="h-full w-full object-cover"
+        />
+      </div>
+
       <span className="leading-none">
-        <span className={`${compact ? "text-xl" : "text-2xl"} block font-black tracking-tight text-stone-900 sm:text-3xl`}>
+        <span
+          className={`${
+            compact ? "text-xl" : "text-2xl"
+          } block font-black tracking-tight text-stone-900 sm:text-3xl`}
+        >
           ORNAQ
         </span>
         <span className="mt-1 block text-[10px] font-black uppercase tracking-[0.3em] text-stone-500">
@@ -33,7 +42,7 @@ export default function Navbar() {
   const [cartCount, setCartCount] = useState(0);
   const [sareeCode, setSareeCode] = useState("");
   const location = useLocation();
-  const { user, isAdmin, logout } = useAuth();
+  const { isAdmin, logout } = useAuth();
   const { cart } = useStore();
   const navigate = useNavigate();
   useEffect(() => {
@@ -88,7 +97,7 @@ export default function Navbar() {
             <div className="flex items-center border rounded-lg overflow-hidden">
               <input
                 type="text"
-                placeholder="Saree Code"
+                placeholder=" Item Code"
                 value={sareeCode}
                 onChange={(e) =>
                   setSareeCode(e.target.value)
@@ -121,22 +130,42 @@ export default function Navbar() {
             >
               Wishlist
             </NavLink>
-            {user && isAdmin && (
-              <div className="flex items-center space-x-6">
-                <NavLink
-                  to="/admin/dashboard"
-                  className={({ isActive }) => `px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-brand-700 border-b-2 border-brand-700' : 'text-brand-600 hover:text-brand-700'}`}
-                >
-                  Admin
-                </NavLink>
-                <button
-                  onClick={logout}
-                  className="border-b-2 border-transparent px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:border-red-500 hover:text-red-600"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
+            {isAdmin ? (
+  <div className="flex items-center space-x-6">
+    <NavLink
+      to="/admin/dashboard"
+      className={({ isActive }) =>
+        `px-3 py-2 text-sm font-medium transition-colors ${
+          isActive
+            ? "text-brand-700 border-b-2 border-brand-700"
+            : "text-brand-600 hover:text-brand-700"
+        }`
+      }
+    >
+      Dashboard
+    </NavLink>
+
+    <button
+      onClick={logout}
+      className="border-b-2 border-transparent px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:border-red-500 hover:text-red-600"
+    >
+      Sign Out
+    </button>
+  </div>
+) : (
+  <NavLink
+    to="/admin/login"
+    className={({ isActive }) =>
+      `rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
+        isActive
+          ? "bg-black text-white border-black"
+          : "border-black text-black hover:bg-black hover:text-white"
+      }`
+    }
+  >
+    Admin Login
+  </NavLink>
+)}
           </div>
 
           {/* Hamburger */}
@@ -191,7 +220,7 @@ export default function Navbar() {
                     <div className="flex border rounded-lg overflow-hidden">
                       <input
                         type="text"
-                        placeholder="Enter Saree Code"
+                        placeholder="Enter Item Code"
                         value={sareeCode}
                         onChange={(e) =>
                           setSareeCode(e.target.value)
@@ -242,19 +271,48 @@ export default function Navbar() {
                     <NavLink to="/wishlist" className="nav-link" onClick={closeMobileMenu}>
                       <span className="flex-1">Wishlist</span>
                     </NavLink>
-                    {user && isAdmin && (
-                      <>
-                        <NavLink to="/admin/dashboard" className="nav-link text-brand-600 bg-brand-50/50" onClick={closeMobileMenu}>
-                          <span className="flex-1">Admin Dashboard</span>
-                        </NavLink>
-                        <button
-                          onClick={() => { logout(); closeMobileMenu(); }}
-                          className="nav-link w-full text-left font-bold text-red-500 hover:text-red-600"
-                        >
-                          Sign Out
-                        </button>
-                      </>
-                    )}
+             {isAdmin ? (
+  <>
+    <NavLink
+      to="/admin/dashboard"
+      className="nav-link text-brand-600 bg-brand-50/50"
+      onClick={closeMobileMenu}
+    >
+      <span className="flex-1">Admin Dashboard</span>
+    </NavLink>
+
+    <button
+      onClick={() => {
+        logout();
+        closeMobileMenu();
+      }}
+      className="nav-link w-full text-left font-bold text-red-500 hover:text-red-600"
+    >
+      Sign Out
+    </button>
+  </>
+) : (
+  <NavLink
+    to="/admin/login"
+    className="nav-link"
+    onClick={closeMobileMenu}
+  >
+    <span className="flex-1">Admin Login</span>
+    <svg
+      className="h-5 w-5 text-zinc-300"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5l7 7-7 7"
+      />
+    </svg>
+  </NavLink>
+)}
                   </div>
                 </nav>
               </div>
