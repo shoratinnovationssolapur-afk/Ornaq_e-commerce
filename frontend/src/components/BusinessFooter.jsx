@@ -101,7 +101,7 @@ export default function BusinessFooter() {
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Intelligence</span>
-                <p>Managed by {businessProfile.ownerName}</p>
+                <p>Managed by OrnaqTeam</p>
               </div>
             </div>
           </div>
