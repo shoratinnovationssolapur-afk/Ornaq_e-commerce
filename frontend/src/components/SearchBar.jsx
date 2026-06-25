@@ -180,7 +180,7 @@ export default function SearchBar({ mobile = false, onNavigate = () => {} }) {
                       <img src={getProductImage(product)} alt={product.name} className="h-16 w-14 rounded-2xl object-cover" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold text-stone-900">{product.name}</p>
-                        <p className="truncate text-xs text-stone-500">{product.category} • {product.fabric}</p>
+                        <p className="truncate text-xs text-stone-500">{product.classification} • {product.fabric}</p>
                       </div>
                       <span className="text-sm font-bold text-brand-800">{formatCurrency(getOfferPrice(product))}</span>
                     </Link>
