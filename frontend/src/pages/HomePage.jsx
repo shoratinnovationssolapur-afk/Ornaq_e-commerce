@@ -101,7 +101,7 @@ export default function HomePage() {
           transition={{ duration: 1.6, ease: "easeOut" }}
           src={logoGold} 
           alt="ORNAQ logo background" 
-          className="absolute inset-0 h-full w-full object-cover object-center" 
+          className="absolute inset-0 h-full w-full object-cover object-[center_10%]"
         />
         <div className="absolute inset-0 bg-stone-950/45" />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/25 to-transparent" />
