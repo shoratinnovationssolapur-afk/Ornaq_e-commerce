@@ -12,6 +12,7 @@ export default function AddProductPage() {
     name: "",
     sareeCode: "",
     description: "",
+    classifications: "",
     youtubeLink: "",
     category: "Silk",
     fabric: "",
@@ -45,7 +46,7 @@ export default function AddProductPage() {
   );
 
   useEffect(() => {
-    api.get("/products/filters/meta").then((response) => setMetadata(response.data)).catch(() => {});
+    api.get("/products/filters/meta").then((response) => setMetadata(response.data)).catch(() => { });
   }, []);
 
   const handleFileChange = (event) => {
@@ -160,7 +161,7 @@ export default function AddProductPage() {
                     <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Enter saree code..." value={form.sareeCode} onChange={(event) => setForm((current) => ({ ...current, sareeCode: event.target.value }))} />
                   </div>
 
-                   <div className="space-y-2">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Youtube Link</label>
                     <input required className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Enter Youtube link..." value={form.youtubeLink} onChange={(event) => setForm((current) => ({ ...current, youtubeLink: event.target.value }))} />
                   </div>
@@ -178,10 +179,43 @@ export default function AddProductPage() {
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700 mb-6">Material Attributes</p>
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Classification</label>
-                    <select className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-black uppercase tracking-widest text-stone-600 border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all appearance-none" value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">
+                      Classification
+                    </label>
+
+                    <input
+                      required
+                      type="text"
+                      placeholder="Premium Saree"
+                      value={form.classification}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          classification: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">
+                      Category
+                    </label>
+
+                    <select
+                      value={form.category}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          category: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-black border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
+                    >
                       {categories.map((category) => (
-                        <option key={category} value={category}>{category}</option>
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
                       ))}
                     </select>
                   </div>
