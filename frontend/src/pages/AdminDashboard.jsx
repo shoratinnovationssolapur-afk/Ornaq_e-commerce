@@ -134,7 +134,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-black text-stone-900">{product.name}</p>
-                    <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-widest text-stone-400">{product.category} • {product.fabric}</p>
+                    <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-widest text-stone-400">{product.classification} • {product.fabric}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-lg font-black text-amber-600">{product.stock}</span>
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-black text-stone-900">{product.name}</p>
-                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">{product.category}</p>
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">{product.classification}</p>
                   </div>
                 </div>
                 <div className="mt-6 flex items-center justify-between border-b border-stone-50 pb-4">
