@@ -146,7 +146,7 @@ export default function ProductManagementPage() {
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <span className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-brand-800">{product.category}</span>
+                      <span className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-brand-800">{product.classification}</span>
                     </td>
                     <td className="px-8 py-6">
                       <p className="font-black text-stone-900">{formatCurrency(getOfferPrice(product))}</p>
@@ -214,7 +214,7 @@ export default function ProductManagementPage() {
                   <img src={getProductImage(product)} alt={product.name} className="h-full w-full object-cover" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-700">{product.category}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-700">{product.classification}</p>
                   <p className="mt-1 font-black text-stone-900 leading-tight">{product.name}</p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-300">{product.fabric} • {product.color}</p>
                   <p className="mt-3 text-lg font-black text-stone-900">{formatCurrency(getOfferPrice(product))}</p>
