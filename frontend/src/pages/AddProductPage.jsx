@@ -6,6 +6,8 @@ import { categoryOptions, isJewelleryCategory, mergeCategories } from "../utils/
 export default function AddProductPage() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  
+  // Set initial state fallback directly to static categoryOptions if the API response hasn't loaded yet
   const [metadata, setMetadata] = useState({ categories: categoryOptions, fabrics: [] });
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -25,16 +27,24 @@ export default function AddProductPage() {
     deliveryEstimateMaxDays: 5,
     featured: false,
     isNewArrival: true,
-    categoryCoverImage: null // Holds the file object for the category cover image
+    categoryCoverImage: null 
   });
-  const [categoryImagePreview, setCategoryImagePreview] = useState(""); // URL for layout preview
+  
+  const [existingCategoryCoverUrl, setExistingCategoryCoverUrl] = useState("");
+  const [categoryImagePreview, setCategoryImagePreview] = useState(""); 
+  
   const [files, setFiles] = useState([]);
   const [modelFiles, setModelFiles] = useState([]);
   const [variantFiles, setVariantFiles] = useState({});
   const [previews, setPreviews] = useState([]);
   const [modelPreviews, setModelPreviews] = useState([]);
   
-  const categories = useMemo(() => mergeCategories(metadata.categories), [metadata.categories]);
+  // Combines static defaults with dynamic entries safely via useMemo
+  const categories = useMemo(() => {
+    const rawCategories = metadata.categories?.length ? metadata.categories : categoryOptions;
+    return mergeCategories(rawCategories);
+  }, [metadata.categories]);
+
   const formIsJewellery = isJewelleryCategory(form.category);
   const variantColors = useMemo(
     () =>
@@ -49,8 +59,40 @@ export default function AddProductPage() {
   );
 
   useEffect(() => {
-    api.get("/products/filters/meta").then((response) => setMetadata(response.data)).catch(() => { });
+    // Fetches live database meta metrics, automatically capturing any freshly registered product category entries
+    api.get("/products/filters/meta")
+      .then((response) => {
+        if (response.data) {
+          setMetadata((prev) => ({
+            ...prev,
+            ...response.data,
+            // Ensure array structure persists cleanly
+            categories: response.data.categories || response.data.categoryOptions || categoryOptions
+          }));
+        }
+      })
+      .catch((err) => {
+        console.error("Fallback to hardcoded presets. Dynamic categories failed to fetch:", err.message);
+      });
   }, []);
+
+  const handleCategoryBlur = async () => {
+    const trimmedCategory = form.category.trim();
+    if (!trimmedCategory) return;
+
+    try {
+      const response = await api.get(`/products/category-meta?category=${encodeURIComponent(trimmedCategory)}`);
+      if (response.data?.categoryCover) {
+        setExistingCategoryCoverUrl(response.data.categoryCover);
+        setCategoryImagePreview(response.data.categoryCover);
+      } else {
+        setExistingCategoryCoverUrl("");
+        if (!form.categoryCoverImage) setCategoryImagePreview("");
+      }
+    } catch (err) {
+      console.log("No pre-existing category metadata resolved:", err.message);
+    }
+  };
 
   const handleFileChange = (event) => {
     const selectedFiles = Array.from(event.target.files || []);
@@ -96,11 +138,10 @@ export default function AddProductPage() {
       const images = await uploadProductImages(files);
       const modelImages = await uploadProductImages(modelFiles);
       
-      // Upload Category cover image if it exists
-      let uploadedCategoryCover = "";
+      let finalCategoryCover = existingCategoryCoverUrl;
       if (form.categoryCoverImage) {
         const coverResult = await uploadProductImages([form.categoryCoverImage]);
-        uploadedCategoryCover = coverResult[0] || "";
+        finalCategoryCover = coverResult[0] || "";
       }
 
       const colors = form.colorsInput
@@ -131,7 +172,7 @@ export default function AddProductPage() {
         images,
         modelImages,
         variants,
-        categoryCover: uploadedCategoryCover // Pass along the parsed image source string
+        categoryCover: finalCategoryCover 
       });
 
       navigate("/admin/products");
@@ -198,20 +239,25 @@ export default function AddProductPage() {
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-700 mb-6">Material Attributes</p>
                 <div className="space-y-6">
                   
-                  {/* Row Containing Classification standalone */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Classification</label>
                     <input required type="text" placeholder="Premium Saree" value={form.classification} onChange={(event) => setForm((current) => ({ ...current, classification: event.target.value }))} className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" />
                   </div>
                   
-                  {/* Splitting Category and its corresponding Cover Image into a side-by-side flexbox wrapper */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 items-end">
                     <div className="space-y-2 sm:col-span-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Category</label>
-                      <input required type="text" placeholder="e.g. Silk, Linen, Jewellery" value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))} className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" />
+                      <input 
+                        required 
+                        type="text" 
+                        placeholder="e.g. Silk, Linen, Jewellery" 
+                        value={form.category} 
+                        onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))} 
+                        onBlur={handleCategoryBlur} 
+                        className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" 
+                      />
                     </div>
                     
-                    {/* Category Cover Image Box Slot */}
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Category Cover</label>
                       <div className="relative h-14 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 flex items-center justify-center overflow-hidden hover:border-brand-400 transition-colors cursor-pointer group">
@@ -226,7 +272,9 @@ export default function AddProductPage() {
                         )}
                         {categoryImagePreview && (
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
-                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Change</span>
+                            <span className="text-[8px] font-black text-white uppercase tracking-widest">
+                              {existingCategoryCoverUrl && !form.categoryCoverImage ? "Overwrite" : "Change"}
+                            </span>
                           </div>
                         )}
                       </div>
