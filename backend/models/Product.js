@@ -35,6 +35,10 @@ const productSchema = new mongoose.Schema(
     slug: { type: String, unique: true, required: true },
     description: { type: String, required: true },
     category: { type: String, required: true, trim: true, index: true },
+    
+    // 💡 FIXED: Added categoryCover here so Mongoose allows saving the string Cloudinary URL!
+    categoryCover: { type: String, trim: true }, 
+
     fabric: { type: String, required: true, index: true },
     color: { type: String, required: true, index: true },
     colors: [{ type: String, trim: true, index: true }],
@@ -59,28 +63,25 @@ const productSchema = new mongoose.Schema(
     averageRating: { type: Number, default: 0, min: 0, max: 5 },
     totalReviews: { type: Number, default: 0, min: 0 },
     classification: {
-  type: String,
-  required: true,
-  trim: true,
-},
+      type: String,
+      required: true,
+      trim: true,
+    },
     deliveryEstimate: {
       minDays: { type: Number, default: 3, min: 1 },
       maxDays: { type: Number, default: 5, min: 1 }
     },
-     sareeCode: {
+    sareeCode: {
       type: String,
       unique: true,
       trim: true,
       index: true
-   },
-
-   youtubeLink: { type: String, trim: true },
-   
+    },
+    youtubeLink: { type: String, trim: true },
     serviceablePincodes: [{ type: String }],
     qrCodeUrl: String
   },
-  { timestamps: true },
-  
+  { timestamps: true }
 );
 
 productSchema.index({ createdAt: -1 });

@@ -4,13 +4,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "../components/ProductCard";
 import ProductModal from "../components/ProductModal";
 import api from "../services/api";
+
 import heroBanner from "../assets/hero-banner.png";
 import logoGold from "../assets/logo-gold.jpeg";
 import { JEWELLERY_CATEGORY } from "../utils/catalog";
 import { getHomeCategories } from "../utils/homeCategories";
 import { PRIMARY_POLICY_SLUGS, getPolicyPath } from "../utils/policyPages";
 
+
 export default function HomePage() {
+
+  const [categories, setCategories] = useState([]);
   const defaultHomeFeed = {
     newArrivals: [],
     trending: [],
@@ -18,11 +22,15 @@ export default function HomePage() {
     jewellerySpotlight: [],
     stories: []
   };
+  
+  const JEWELLERY_CATEGORY = "Jewellery";
   const [homeFeed, setHomeFeed] = useState(defaultHomeFeed);
   const [policies, setPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [categories, setCategories] = useState([]);
+  // const [brandPillars, setBrandPillars] = useState([]); //
 
   useEffect(() => {
     Promise.all([api.get("/products/home-feed"), api.get("/policies")])
@@ -32,6 +40,63 @@ export default function HomePage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+  }, []);
+
+  useEffect(() => {
+    // 1. Get your baseline 5 static categories
+    const localPresets = getHomeCategories();
+
+    // 2. Fetch live products from backend to extract any dynamic categories
+    api.get("/products")
+      .then((response) => {
+        const products = Array.isArray(response.data) ? response.data : response.data.products || [];
+        const merged = [...localPresets];
+
+        products.forEach((product) => {
+          if (!product.category) return;
+
+          const nameString = product.category.trim();
+          
+          // Don't duplicate if it already exists in the presets array
+          const exists = merged.some(c => c.name.toLowerCase() === nameString.toLowerCase());
+
+          // Resolve dynamic cover image or fallback to the product's first uploaded image asset
+          let coverImg = product.categoryCover || "";
+          
+          if (!coverImg && product.images && product.images.length > 0) {
+            const firstImg = product.images[0];
+            coverImg = typeof firstImg === "object" ? firstImg.url : firstImg;
+          }
+
+          // Absolute fallback if everything is empty
+          if (!coverImg) {
+            coverImg = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop";
+          }
+
+          if (!exists) {
+            // Push newly registered custom category entries right into your layout array
+            merged.push({
+              name: nameString,
+              slug: nameString,
+              img: coverImg,
+              isCustom: true
+            });
+          } else if (product.categoryCover) {
+            // Update a preset thumbnail if a custom cover was explicitly uploaded
+            const idx = merged.findIndex(c => c.name.toLowerCase() === nameString.toLowerCase());
+            if (idx !== -1) {
+              merged[idx].img = coverImg;
+            }
+          }
+        });
+
+        setCategories(merged);
+      })
+      .catch((err) => {
+        console.error("Failed to merge custom home feed categories:", err);
+        setCategories(localPresets); // Graceful baseline array fallback
+      });
   }, []);
 
   const handleProductClick = (product) => {
@@ -44,7 +109,7 @@ export default function HomePage() {
     setSelectedProduct(null);
   };
 
-  const categories = getHomeCategories(homeFeed.jewellerySpotlight[0]?.images?.[0]?.url);
+  // const categories = getHomeCategories(homeFeed.jewellerySpotlight[0]?.images?.[0]?.url);
   const brandNameParts = [
     {
       label: "OR",

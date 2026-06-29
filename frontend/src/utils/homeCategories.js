@@ -27,13 +27,13 @@ const jewelleryPlaceholder =
   `);
 
 export const getHomeCategories = (jewelleryImage) => [
-  { name: "Silk", img: catSilk, slug: "Silk" },
-  { name: "Wedding Sarees", img: catWedding, slug: "Wedding Sarees" },
-  { name: "Cotton", img: catSilk, slug: "Cotton" },
-  { name: "Paithani", img: catWedding, slug: "Paithani" },
-  {
-    name: JEWELLERY_CATEGORY,
-    img: jewelleryImage || jewelleryPlaceholder,
-    slug: JEWELLERY_CATEGORY
-  }
+  // { name: "Silk", img: catSilk, slug: "Silk" },
+  // { name: "Wedding Sarees", img: catWedding, slug: "Wedding Sarees" },
+  // { name: "Cotton", img: catSilk, slug: "Cotton" },
+  // { name: "Paithani", img: catWedding, slug: "Paithani" },
+  // {
+  //   name: JEWELLERY_CATEGORY,
+  //   img: jewelleryImage || jewelleryPlaceholder,
+  //   slug: JEWELLERY_CATEGORY
+  // }
 ];

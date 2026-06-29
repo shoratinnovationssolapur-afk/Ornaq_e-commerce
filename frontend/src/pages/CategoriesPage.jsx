@@ -11,41 +11,39 @@ export default function CategoriesPage() {
   useEffect(() => {
     const localPresets = getHomeCategories();
 
-    // Fetch filters metadata
-    api.get("/products/filters/meta")
+    api.get("/products")
       .then((response) => {
-        // Fallback checks depending on how your database formats categories array
-        const dbCategories = response.data.categories || [];
+        const products = Array.isArray(response.data) ? response.data : response.data.products || [];
         const merged = [...localPresets];
 
-        dbCategories.forEach((cat) => {
-          // 1. Normalize name regardless of if it's an object or a raw string
-          const nameString = typeof cat === "string" ? cat : cat.name;
-          if (!nameString) return;
+        products.forEach((product) => {
+          if (!product.category) return;
 
+          const nameString = product.category.trim();
           const exists = merged.some(c => c.name.toLowerCase() === nameString.toLowerCase());
 
-          // 2. Look for the cover image directly in the category object payload from /meta if provided
-          // Otherwise, fall back to a high-quality default lifestyle unspash image asset
-          let coverImg = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop"; 
-          
-          if (typeof cat === "object" && cat.categoryCover) {
-            coverImg = cat.categoryCover;
+          // Safely resolve the clean Cloudinary categoryCover URL string stored inside the product document
+          let coverImg = "";
+          if (product.categoryCover) {
+            coverImg = typeof product.categoryCover === "object" ? product.categoryCover.url : product.categoryCover;
+          }
+
+          // Fallback image asset string
+          if (!coverImg) {
+            coverImg = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop";
           }
 
           if (!exists) {
-            // Add custom category smoothly
             merged.push({
               name: nameString,
-              slug: nameString, 
+              slug: nameString,
               img: coverImg,
               isCustom: true
             });
-          } else {
-            // Update an existing category preset image if a live dynamic cover exists
+          } else if (product.categoryCover) {
             const idx = merged.findIndex(c => c.name.toLowerCase() === nameString.toLowerCase());
-            if (idx !== -1 && typeof cat === "object" && cat.categoryCover) {
-              merged[idx].img = cat.categoryCover;
+            if (idx !== -1) {
+              merged[idx].img = coverImg;
             }
           }
         });
@@ -53,7 +51,7 @@ export default function CategoriesPage() {
         setCategories(merged);
       })
       .catch((err) => {
-        console.error("Dynamic categories configuration failed, loading defaults:", err);
+        console.error("Dynamic categories rendering fallback triggered:", err);
         setCategories(localPresets);
       })
       .finally(() => {
@@ -96,7 +94,6 @@ export default function CategoriesPage() {
                     alt={category.name}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     onError={(e) => {
-                      // Safety net fallback image in case any local storage file goes missing
                       e.target.src = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop";
                     }}
                   />
