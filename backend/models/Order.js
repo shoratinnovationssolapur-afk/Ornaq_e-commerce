@@ -8,6 +8,7 @@ const orderItemSchema = new mongoose.Schema(
     qty: { type: Number, min: 1, default: 1 },
     price: Number,
     selectedColor: String,
+    selectedSize: String,
     sku: String,
     category: String
   },

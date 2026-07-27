@@ -191,7 +191,9 @@ export default function OrderTrackingPage() {
                     </div>
                     <div>
                       <p className="text-sm font-black text-stone-900 uppercase tracking-wide">{item.name}</p>
-                      <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">Qty: {item.qty}{item.selectedColor ? ` • ${item.selectedColor}` : ""}</p>
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                        Qty: {item.qty}{item.selectedColor ? ` • ${item.selectedColor}` : ""}{item.selectedSize ? ` • ${item.selectedSize}` : ""}
+                      </p>
                     </div>
                   </div>
                   <p className="text-sm font-black text-stone-900">{formatCurrency(item.price * item.qty)}</p>

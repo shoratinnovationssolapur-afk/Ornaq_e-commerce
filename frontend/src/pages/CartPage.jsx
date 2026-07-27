@@ -36,7 +36,7 @@ export default function CartPage() {
             )}
 
             {cart.map((item) => (
-              <article key={`${item._id}-${item.selectedColor || "default"}`} className="group relative flex gap-6 rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-xl shadow-stone-100 transition-all hover:shadow-stone-200/50">
+              <article key={`${item._id}-${item.selectedColor || "default"}-${item.selectedSize || "default"}`} className="group relative flex gap-6 rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-xl shadow-stone-100 transition-all hover:shadow-stone-200/50">
                 <Link to={`/product/${item.slug}`} className="relative aspect-[3/4] w-28 shrink-0 overflow-hidden rounded-2xl bg-stone-50 sm:w-32">
                   <img src={getProductImage(item, item.selectedColor)} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 </Link>
@@ -45,11 +45,13 @@ export default function CartPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h3 className="line-clamp-1 text-base font-black text-stone-900 sm:text-lg">{item.name}</h3>
-                      <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-400">{item.fabric} • {item.selectedColor || item.color}</p>
+                      <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-400">
+                        {item.fabric} • {item.selectedColor || item.color}{item.selectedSize ? ` • ${item.selectedSize}` : ""}
+                      </p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeFromCart(item._id, item.selectedColor)}
+                      onClick={() => removeFromCart(item._id, item.selectedColor, item.selectedSize)}
                       className="rounded-full p-2 text-stone-300 transition-colors hover:bg-red-50 hover:text-red-500"
                       aria-label="Remove item"
                     >
@@ -63,13 +65,13 @@ export default function CartPage() {
                     <div className="flex items-center rounded-xl bg-stone-50 p-1">
                       <button 
                         type="button" 
-                        onClick={() => updateCartQuantity(item._id, item.qty - 1, item.selectedColor)} 
+                        onClick={() => updateCartQuantity(item._id, item.qty - 1, item.selectedColor, item.selectedSize)} 
                         className="flex h-10 w-10 items-center justify-center rounded-lg text-lg font-black transition-colors hover:bg-white hover:text-brand-700"
                       >-</button>
                       <span className="min-w-[40px] text-center text-sm font-black text-stone-900">{item.qty}</span>
                       <button 
                         type="button" 
-                        onClick={() => updateCartQuantity(item._id, item.qty + 1, item.selectedColor)} 
+                        onClick={() => updateCartQuantity(item._id, item.qty + 1, item.selectedColor, item.selectedSize)} 
                         className="flex h-10 w-10 items-center justify-center rounded-lg text-lg font-black transition-colors hover:bg-white hover:text-brand-700"
                       >+</button>
                     </div>

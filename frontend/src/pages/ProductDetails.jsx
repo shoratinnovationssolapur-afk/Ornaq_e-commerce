@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
 import ProductMediaViewer from "../components/ProductMediaViewer";
 import api, { getApiErrorMessage } from "../services/api";
-import { formatCurrency, getMarketPrice, getOfferPrice, hasOfferPrice } from "../utils/catalog";
+import { formatCurrency, getMarketPrice, getOfferPrice, getProductSizes, hasOfferPrice } from "../utils/catalog";
 
 const ProductDetails = () => {
   const { code } = useParams();
@@ -12,6 +12,7 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -33,7 +34,13 @@ const ProductDetails = () => {
     fetchProduct();
   }, [code]);
 
+  const productSizes = useMemo(() => getProductSizes(product), [product]);
   const selectedColor = product?.color || product?.colors?.[0] || "";
+  useEffect(() => {
+    if (!product) return;
+    setSelectedSize(productSizes.length ? productSizes[0] : "");
+  }, [product, productSizes.length]);
+
   const availableStock = Number(product?.stock ?? 0);
   const isOutOfStock = availableStock <= 0;
   const effectivePrice = getOfferPrice(product);
@@ -48,7 +55,8 @@ const ProductDetails = () => {
         directItem: {
           product,
           quantity: 1,
-          selectedColor
+          selectedColor,
+          selectedSize
         }
       }
     });
@@ -103,6 +111,28 @@ const ProductDetails = () => {
             <p className="mt-5 text-base leading-relaxed text-stone-600">{product.description}</p>
           )}
 
+          {productSizes.length > 0 && (
+            <div className="mt-6">
+              <p className="mb-4 text-xs font-black uppercase tracking-widest text-stone-400">Available Sizes</p>
+              <div className="flex flex-wrap gap-3">
+                {productSizes.map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setSelectedSize(size)}
+                    className={`rounded-2xl border-2 px-5 py-3 text-sm font-black transition-all active:scale-95 ${
+                      selectedSize === size
+                        ? "border-brand-600 bg-brand-50/50 text-brand-900 shadow-md shadow-brand-100"
+                        : "border-stone-100 bg-stone-50 text-stone-600 hover:border-stone-200"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 rounded-2xl border border-stone-100 bg-stone-50 px-5 py-4">
             <p className={`text-sm font-black uppercase tracking-wider ${isOutOfStock ? "text-red-600" : "text-emerald-700"}`}>
               {isOutOfStock ? "Sold Out" : `${availableStock} in stock`}
@@ -112,7 +142,7 @@ const ProductDetails = () => {
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              onClick={() => addToCart(product, 1, selectedColor)}
+              onClick={() => addToCart(product, 1, selectedColor, selectedSize)}
               disabled={isOutOfStock}
               className="btn-primary justify-center py-4 disabled:cursor-not-allowed disabled:opacity-50"
             >

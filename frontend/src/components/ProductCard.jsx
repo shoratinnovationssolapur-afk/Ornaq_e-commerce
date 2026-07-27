@@ -1,7 +1,15 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
-import { formatCurrency, getMarketPrice, getOfferPrice, getProductColors, getProductImage, hasOfferPrice } from "../utils/catalog";
+import {
+  formatCurrency,
+  getMarketPrice,
+  getOfferPrice,
+  getProductColors,
+  getProductImage,
+  getProductSizes,
+  hasOfferPrice
+} from "../utils/catalog";
 
 export default function ProductCard({ product, dark = false, onCardClick }) {
   const { addToCart, toggleWishlist, wishlist } = useStore();
@@ -10,6 +18,8 @@ export default function ProductCard({ product, dark = false, onCardClick }) {
   const offerPrice = getOfferPrice(product);
   const wishlisted = wishlist.some((item) => item._id === product._id);
   const productColors = getProductColors(product);
+  const productSizes = getProductSizes(product);
+  const defaultSize = productSizes.length ? productSizes[0] : "";
   const colors = productColors.slice(0, 3);
 
   const handleCardClick = (e) => {
@@ -84,9 +94,16 @@ export default function ProductCard({ product, dark = false, onCardClick }) {
       <div className="flex flex-col p-6">
         <div className="mb-4">
           <div className="flex items-start justify-between gap-4">
-            <h3 className="line-clamp-1 flex-1 text-sm font-black text-stone-900 uppercase tracking-wider group-hover:text-brand-700 transition-colors">
-              {product.name}
-            </h3>
+            <div className="min-w-0 flex-1">
+              <h3 className="line-clamp-1 text-sm font-black text-stone-900 uppercase tracking-wider group-hover:text-brand-700 transition-colors">
+                {product.name}
+              </h3>
+              {productSizes.length > 0 && (
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                  Sizes: {productSizes.join(", ")}
+                </p>
+              )}
+            </div>
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); toggleWishlist(product); }}
@@ -120,7 +137,7 @@ export default function ProductCard({ product, dark = false, onCardClick }) {
           <div className="mt-6">
             <button
               type="button"
-              onClick={(e) => { e.preventDefault(); addToCart(product, 1, product.color); }}
+              onClick={(e) => { e.preventDefault(); addToCart(product, 1, product.color, defaultSize); }}
               disabled={product.stock === 0}
               className={`btn-primary w-full py-3 shadow-xl shadow-stone-100 transition-all active:scale-95 ${
                 product.stock === 0 

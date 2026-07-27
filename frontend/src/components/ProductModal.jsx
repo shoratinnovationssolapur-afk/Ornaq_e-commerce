@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useMemo } from "react"; // Added useMemo
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
-import { formatCurrency, getMarketPrice, getOfferPrice, getProductColors, getProductImage, hasOfferPrice } from "../utils/catalog";
+import { formatCurrency, getMarketPrice, getOfferPrice, getProductColors, getProductImage, getProductSizes, hasOfferPrice } from "../utils/catalog";
 import ProductMediaViewer from "./ProductMediaViewer";
 
 export default function ProductModal({ product, open, onClose }) {
@@ -11,14 +11,17 @@ export default function ProductModal({ product, open, onClose }) {
   
   // Track active selected color
   const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
+  const productSizes = getProductSizes(product);
 
-  // Auto-initialize color selection when the modal opens with a new product
+  // Auto-initialize color and size selection when the modal opens with a new product
   useEffect(() => {
     if (product) {
       const colors = getProductColors(product);
       setSelectedColor(colors.length > 0 ? colors[0] : "");
+      setSelectedSize(productSizes.length ? productSizes[0] : "");
     }
-  }, [product, open]);
+  }, [product, open, productSizes.length]);
   
   // MATCHING REFERENCE FILE LOGIC: Find the active variant based on the selected color
   const activeVariant = useMemo(() => {
@@ -43,12 +46,12 @@ export default function ProductModal({ product, open, onClose }) {
   const productColors = getProductColors(product);
 
   const handleAddToCart = () => {
-    addToCart(product, 1, selectedColor || product.color);
+    addToCart(product, 1, selectedColor || product.color, selectedSize);
     onClose();
   };
 
   const handleBuyNow = () => {
-    addToCart(product, 1, selectedColor || product.color);
+    addToCart(product, 1, selectedColor || product.color, selectedSize);
     onClose();
     navigate("/checkout");
   };
@@ -126,6 +129,29 @@ export default function ProductModal({ product, open, onClose }) {
                     <div className="mt-8">
                       <h3 className="text-xs font-black uppercase tracking-[0.2em] text-stone-700">About this piece</h3>
                       <p className="mt-3 text-sm leading-relaxed text-stone-600">{product.description}</p>
+                    </div>
+                  )}
+
+                  {/* Sizes Selection Grid */}
+                  {productSizes.length > 0 && (
+                    <div className="mt-8">
+                      <h3 className="text-xs font-black uppercase tracking-[0.2em] text-stone-700">Available Sizes</h3>
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        {productSizes.map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => setSelectedSize(size)}
+                            className={`rounded-xl border-2 px-4 py-2 text-xs font-black transition-all active:scale-95 ${
+                              selectedSize === size
+                                ? "border-stone-900 bg-stone-50 text-stone-900 shadow-sm"
+                                : "border-stone-100 bg-stone-50/50 text-stone-600 hover:border-stone-200"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
 

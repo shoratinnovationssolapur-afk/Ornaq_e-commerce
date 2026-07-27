@@ -42,7 +42,8 @@ export default function CheckoutPage() {
             directCheckoutItem.selectedColor ||
             directCheckoutItem.product.color ||
             directCheckoutItem.product.colors?.[0] ||
-            ""
+            "",
+          selectedSize: directCheckoutItem.selectedSize || ""
         }
       ];
     }
@@ -176,7 +177,8 @@ export default function CheckoutPage() {
     const orderItems = checkoutItems.map((item) => ({
       product: item._id || item.product?._id || item.product,
       qty: Number(item.qty) || 0,
-      selectedColor: item.selectedColor || item.color || ""
+      selectedColor: item.selectedColor || item.color || "",
+      selectedSize: item.selectedSize || ""
     }));
 
     if (orderItems.some((item) => !item.product || item.qty <= 0)) {
@@ -386,11 +388,11 @@ export default function CheckoutPage() {
             <h2 className="text-xl font-black text-stone-900">Order Summary</h2>
             <div className="mt-8 max-h-60 space-y-4 overflow-y-auto pr-2 scrollbar-hide">
               {checkoutItems.map((item) => (
-                <div key={`${item._id}-${item.selectedColor || "default"}`} className="flex justify-between gap-4">
+                <div key={`${item._id}-${item.selectedColor || "default"}-${item.selectedSize || "default"}`} className="flex justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-stone-800">{item.name}</p>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                      Qty: {item.qty} {item.selectedColor ? `• ${item.selectedColor}` : ""}
+                      Qty: {item.qty}{item.selectedColor ? ` • ${item.selectedColor}` : ""}{item.selectedSize ? ` • ${item.selectedSize}` : ""}
                     </p>
                   </div>
                   <span className="shrink-0 text-sm font-black text-stone-900">

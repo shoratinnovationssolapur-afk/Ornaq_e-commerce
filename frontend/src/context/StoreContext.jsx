@@ -35,7 +35,8 @@ export const StoreProvider = ({ children }) => {
           (res.data.items || []).map((item) => ({
             ...item.product,
             qty: item.qty,
-            selectedColor: item.selectedColor || item.product?.color || ""
+            selectedColor: item.selectedColor || item.product?.color || "",
+            selectedSize: item.selectedSize || ""
           }))
         )
       )
@@ -58,22 +59,28 @@ export const StoreProvider = ({ children }) => {
     localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(recentlyViewed));
   }, [recentlyViewed]);
 
-  const addToCart = useCallback(async (product, qty = 1, selectedColor = "") => {
+  const addToCart = useCallback(async (product, qty = 1, selectedColor = "", selectedSize = "") => {
     const normalizedColor = selectedColor || product.color || product.colors?.[0] || "";
-    const matcher = (item) => item._id === product._id && String(item.selectedColor || "") === String(normalizedColor || "");
+    const normalizedSize = selectedSize || "";
+    const matcher = (item) =>
+      item._id === product._id &&
+      String(item.selectedColor || "") === String(normalizedColor || "") &&
+      String(item.selectedSize || "") === String(normalizedSize || "");
     const nextQty = (cart.find(matcher)?.qty || 0) + qty;
     if (isAuthed) {
-      await api.post("/cart", { productId: product._id, qty: nextQty, selectedColor: normalizedColor }).catch(() => {});
+      await api
+        .post("/cart", { productId: product._id, qty: nextQty, selectedColor: normalizedColor, selectedSize: normalizedSize })
+        .catch(() => {});
     }
     setCart((prev) => {
       const found = prev.find(matcher);
       return found
         ? prev.map((item) => (matcher(item) ? { ...item, qty: item.qty + qty } : item))
-        : [...prev, { ...product, qty, selectedColor: normalizedColor }];
+        : [...prev, { ...product, qty, selectedColor: normalizedColor, selectedSize: normalizedSize }];
     });
     showToast({
       title: "Added to cart",
-      message: `${product.name}${normalizedColor ? ` - ${normalizedColor}` : ""} is now in your bag.`,
+      message: `${product.name}${normalizedColor ? ` - ${normalizedColor}` : ""}${normalizedSize ? ` • ${normalizedSize}` : ""} is now in your bag.`,
       tone: "success"
     });
   }, [cart, isAuthed, showToast]);
@@ -107,7 +114,8 @@ export const StoreProvider = ({ children }) => {
           const orderedItem = orderedItems.find(
             (item) =>
               String(item.product || item._id || "") === String(cartItem._id || "") &&
-              String(item.selectedColor || "") === String(cartItem.selectedColor || "")
+              String(item.selectedColor || "") === String(cartItem.selectedColor || "") &&
+              String(item.selectedSize || "") === String(cartItem.selectedSize || "")
           );
 
           if (!orderedItem) return cartItem;
@@ -121,13 +129,18 @@ export const StoreProvider = ({ children }) => {
     );
   }, []);
 
-  const removeFromCart = useCallback(async (productId, selectedColor = "") => {
+  const removeFromCart = useCallback(async (productId, selectedColor = "", selectedSize = "") => {
     if (isAuthed) {
-      await api.delete(`/cart/${productId}`, { params: selectedColor ? { color: selectedColor } : {} }).catch(() => {});
+      await api
+        .delete(`/cart/${productId}`, { params: { ...(selectedColor ? { color: selectedColor } : {}), ...(selectedSize ? { size: selectedSize } : {}) } })
+        .catch(() => {});
     }
     setCart((prev) =>
       prev.filter(
-        (item) => !(item._id === productId && String(item.selectedColor || "") === String(selectedColor || ""))
+        (item) =>
+          !(item._id === productId &&
+            String(item.selectedColor || "") === String(selectedColor || "") &&
+            String(item.selectedSize || "") === String(selectedSize || ""))
       )
     );
     showToast({
@@ -137,18 +150,22 @@ export const StoreProvider = ({ children }) => {
     });
   }, [isAuthed, showToast]);
 
-  const updateCartQuantity = useCallback(async (productId, qty, selectedColor = "") => {
+  const updateCartQuantity = useCallback(async (productId, qty, selectedColor = "", selectedSize = "") => {
     if (qty <= 0) {
-      return removeFromCart(productId, selectedColor);
+      return removeFromCart(productId, selectedColor, selectedSize);
     }
 
     if (isAuthed) {
-      await api.post("/cart", { productId, qty, selectedColor }).catch(() => {});
+      await api.post("/cart", { productId, qty, selectedColor, selectedSize }).catch(() => {});
     }
 
     setCart((prev) =>
       prev.map((item) =>
-        item._id === productId && String(item.selectedColor || "") === String(selectedColor || "") ? { ...item, qty } : item
+        item._id === productId &&
+        String(item.selectedColor || "") === String(selectedColor || "") &&
+        String(item.selectedSize || "") === String(selectedSize || "")
+          ? { ...item, qty }
+          : item
       )
     );
   }, [isAuthed, removeFromCart]);

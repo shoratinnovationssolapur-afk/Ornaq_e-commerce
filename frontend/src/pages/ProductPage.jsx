@@ -7,7 +7,15 @@ import ProductCard from "../components/ProductCard";
 import ProductMediaViewer from "../components/ProductMediaViewer";
 import ReviewSection from "../components/ReviewSection";
 import SkeletonBlock from "../components/SkeletonBlock";
-import { formatCurrency, getMarketPrice, getOfferPrice, getProductColors, getProductTypeLabel, hasOfferPrice } from "../utils/catalog";
+import {
+  formatCurrency,
+  getMarketPrice,
+  getOfferPrice,
+  getProductColors,
+  getProductSizes,
+  getProductTypeLabel,
+  hasOfferPrice
+} from "../utils/catalog";
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -23,6 +31,7 @@ export default function ProductPage() {
   const [checkingPincode, setCheckingPincode] = useState(false);
   const [pincode, setPincode] = useState("");
   const [serviceability, setServiceability] = useState(null);
+  const [selectedSize, setSelectedSize] = useState("");
 
   useEffect(() => {
     setProduct(null);
@@ -44,6 +53,13 @@ export default function ProductPage() {
   const showOffer = useMemo(() => hasOfferPrice(product), [product]);
   const productColors = useMemo(() => getProductColors(product), [product]);
   const productTypeLabel = useMemo(() => getProductTypeLabel(product), [product]);
+  const productSizes = useMemo(() => getProductSizes(product), [product]);
+
+  useEffect(() => {
+    if (!product) return;
+    setSelectedSize(productSizes.length ? productSizes[0] : "");
+  }, [product, productSizes.length]);
+
   const activeVariant = useMemo(
     () =>
       product?.variants?.find(
@@ -82,7 +98,8 @@ export default function ProductPage() {
         directItem: {
           product,
           quantity: 1,
-          selectedColor: selectedColor || product.color || product.colors?.[0] || ""
+          selectedColor: selectedColor || product.color || product.colors?.[0] || "",
+          selectedSize: selectedSize || ""
         }
       }
     });
@@ -163,6 +180,28 @@ export default function ProductPage() {
               </div>
             )}
 
+            {productSizes.length > 0 && (
+              <div>
+                <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Available Sizes</p>
+                <div className="flex flex-wrap gap-3">
+                  {productSizes.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setSelectedSize(size)}
+                      className={`rounded-2xl border-2 px-5 py-3 text-sm font-black transition-all active:scale-95 ${
+                        selectedSize === size
+                          ? "border-brand-600 bg-brand-50/50 text-brand-900 shadow-md shadow-brand-100"
+                          : "border-stone-100 bg-stone-50 text-stone-600 hover:border-stone-200"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-3xl border border-stone-100 bg-emerald-50/30 p-6">
                 <div className="flex items-center gap-3 mb-2">
@@ -183,7 +222,7 @@ export default function ProductPage() {
             <div className="space-y-4 pt-4">
               <button 
                 type="button" 
-                onClick={() => addToCart(product, 1, selectedColor)}
+                onClick={() => addToCart(product, 1, selectedColor, selectedSize)}
                 disabled={isOutOfStock}
                 className="btn-primary w-full shadow-2xl py-5 text-lg"
               >

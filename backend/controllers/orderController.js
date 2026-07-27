@@ -139,7 +139,8 @@ export const removeOrderedItemsFromCart = async (userId, orderedItems = []) => {
     const itemIndex = cart.items.findIndex(
       (cartItem) =>
         String(cartItem.product) === String(orderedItem.product) &&
-        String(cartItem.selectedColor || "") === String(orderedItem.selectedColor || "")
+        String(cartItem.selectedColor || "") === String(orderedItem.selectedColor || "") &&
+        String(cartItem.selectedSize || "") === String(orderedItem.selectedSize || "")
     );
 
     if (itemIndex === -1) continue;
@@ -173,6 +174,7 @@ export const createOrder = async (req, res) => {
     }
 
     const selectedColor = item.selectedColor || product.color || product.colors?.[0] || "";
+    const selectedSize = item.selectedSize || "";
     const serviceability = isServiceablePincode(shippingAddress?.pincode, product);
     if (!serviceability.available) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: serviceability.message });
@@ -196,6 +198,7 @@ export const createOrder = async (req, res) => {
       category: product.category,
       image: product.images?.[0]?.url || item.image || "",
       selectedColor,
+      selectedSize,
       sku:
         product.variants?.find((variant) => variant.color === selectedColor)?.sku ||
         `${String(product.slug || product._id)}-${selectedColor || "default"}`
@@ -406,7 +409,10 @@ export const reorderOrder = async (req, res) => {
 
   for (const item of order.items) {
     const existing = cart.items.find(
-      (entry) => entry.product.toString() === item.product.toString() && String(entry.selectedColor || "") === String(item.selectedColor || "")
+      (entry) =>
+        entry.product.toString() === item.product.toString() &&
+        String(entry.selectedColor || "") === String(item.selectedColor || "") &&
+        String(entry.selectedSize || "") === String(item.selectedSize || "")
     );
     if (existing) {
       existing.qty += item.qty;
@@ -414,7 +420,8 @@ export const reorderOrder = async (req, res) => {
       cart.items.push({
         product: item.product,
         qty: item.qty,
-        selectedColor: item.selectedColor || ""
+        selectedColor: item.selectedColor || "",
+        selectedSize: item.selectedSize || ""
       });
     }
   }
