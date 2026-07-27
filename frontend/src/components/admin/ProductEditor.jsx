@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
 import { getProductColors, getProductImage, getProductSizes, isJewelleryCategory, mergeCategories } from "../../utils/catalog";
 
+const sizeOptions = ["S", "M", "L", "XL", "1X", "2X", "3X", "4X"];
+
 const emptyForm = {
   name: "",
   description: "",
@@ -40,6 +42,14 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
         )
       ),
     [form.color, form.colorsInput]
+  );
+  const selectedSizes = useMemo(
+    () =>
+      form.sizesInput
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [form.sizesInput]
   );
 
   useEffect(() => {
@@ -92,6 +102,20 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
 
   const getExistingVariant = (color) =>
     product.variants?.find((variant) => String(variant.color).toLowerCase() === String(color).toLowerCase());
+
+  const toggleSize = (size) => {
+    setForm((current) => {
+      const currentSizes = current.sizesInput
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+      const nextSizes = currentSizes.includes(size)
+        ? currentSizes.filter((item) => item !== size)
+        : [...currentSizes, size].filter(Boolean);
+
+      return { ...current, sizesInput: nextSizes.join(", ") };
+    });
+  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -222,8 +246,28 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
                 <input value={form.colorsInput} onChange={(event) => setForm((current) => ({ ...current, colorsInput: event.target.value }))} placeholder="Wine, Rose Gold, Pearl Beige" className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
               </div>
               <div>
-                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Size options</label>
-                <input value={form.sizesInput} onChange={(event) => setForm((current) => ({ ...current, sizesInput: event.target.value }))} placeholder="Free Size, S, M, L, XL" className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
+                <p className="text-sm font-bold text-stone-500">Not sure about your perfect fit?</p>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  {sizeOptions.map((size) => {
+                    const isSelected = selectedSizes.includes(size);
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => toggleSize(size)}
+                        aria-pressed={isSelected}
+                        className={`relative flex h-12 w-12 items-center justify-center rounded-lg border text-base font-semibold transition-colors ${
+                          isSelected
+                            ? "border-[#6f0008] bg-[#6f0008] text-white shadow-sm"
+                            : "border-stone-200 bg-stone-50 text-stone-400 hover:border-[#8a6b5d] hover:bg-white hover:text-stone-900"
+                        }`}
+                      >
+                        {!isSelected && <span className="pointer-events-none absolute left-1/2 top-1/2 h-px w-14 -translate-x-1/2 -translate-y-1/2 -rotate-[28deg] bg-stone-300" />}
+                        <span className="relative z-10">{size}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

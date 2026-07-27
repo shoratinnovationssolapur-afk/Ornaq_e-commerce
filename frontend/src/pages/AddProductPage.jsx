@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { categoryOptions, isJewelleryCategory, mergeCategories } from "../utils/catalog";
 
+const sizeOptions = ["S", "M", "L", "XL", "1X", "2X", "3X", "4X"];
+
 export default function AddProductPage() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
@@ -56,6 +58,14 @@ export default function AddProductPage() {
       ),
     [form.color, form.colorsInput]
   );
+  const selectedSizes = useMemo(
+    () =>
+      form.sizesInput
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [form.sizesInput]
+  );
 
   useEffect(() => {
     api.get("/products/filters/meta")
@@ -96,6 +106,20 @@ export default function AddProductPage() {
     const selectedFiles = Array.from(event.target.files || []);
     setModelFiles(selectedFiles);
     setModelPreviews(selectedFiles.map((file) => URL.createObjectURL(file)));
+  };
+
+  const toggleSize = (size) => {
+    setForm((current) => {
+      const currentSizes = current.sizesInput
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+      const nextSizes = currentSizes.includes(size)
+        ? currentSizes.filter((item) => item !== size)
+        : [...currentSizes, sizeOptions.includes(size) ? size : size.trim()].filter(Boolean);
+
+      return { ...current, sizesInput: nextSizes.join(", ") };
+    });
   };
 
   const uploadProductImages = async (imageFiles) => {
@@ -287,8 +311,28 @@ export default function AddProductPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Size Options</label>
-                    <input className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Free Size, S, M, L, XL" value={form.sizesInput || ""} onChange={(event) => setForm((current) => ({ ...current, sizesInput: event.target.value }))} />
+                    <p className="text-sm font-bold text-stone-500">Not sure about your perfect fit?</p>
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      {sizeOptions.map((size) => {
+                        const isSelected = selectedSizes.includes(size);
+                        return (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => toggleSize(size)}
+                            aria-pressed={isSelected}
+                            className={`relative flex h-14 w-14 items-center justify-center rounded-lg border text-lg font-semibold transition-colors ${
+                              isSelected
+                                ? "border-[#6f0008] bg-[#6f0008] text-white shadow-sm"
+                                : "border-stone-200 bg-stone-50 text-stone-400 hover:border-[#8a6b5d] hover:bg-white hover:text-stone-900"
+                            }`}
+                          >
+                            {!isSelected && <span className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[4.2rem] -translate-x-1/2 -translate-y-1/2 -rotate-[28deg] bg-stone-300" />}
+                            <span className="relative z-10">{size}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
