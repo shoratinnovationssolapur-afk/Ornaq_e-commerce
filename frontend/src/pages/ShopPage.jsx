@@ -2,10 +2,11 @@ import { useDeferredValue, useEffect, useMemo, useState, useCallback } from "rea
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import ProductCard from "../components/ProductCard";
+import ProductModal from "../components/ProductModal";
 import ShopFilters from "../components/ShopFilters";
 import api from "../services/api";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { cleanFilters, defaultShopFilters, mergeCategories } from "../utils/catalog";
+import { cleanFilters, defaultShopFilters, isJewelleryCategory, JEWELLERY_CATEGORY, mergeCategories, sortOptions } from "../utils/catalog";
 
 const readFilters = (searchParams) => ({
   searchQuery: searchParams.get("searchQuery") || "",
@@ -14,7 +15,7 @@ const readFilters = (searchParams) => ({
   color: searchParams.get("color") || "",
   minPrice: searchParams.get("minPrice") || "",
   maxPrice: searchParams.get("maxPrice") || "",
-  sort: searchParams.get("sort") || "newest",
+  sort: searchParams.get("sort") || "default",
   isNewArrival: searchParams.get("isNewArrival") || ""
 });
 
@@ -25,15 +26,33 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Local filter state for immediate UI feedback (e.g. search input)
   const [localFilters, setLocalFilters] = useState(() => readFilters(searchParams));
 
   const debouncedSearch = useDebouncedValue(localFilters.searchQuery, 400);
   const categories = useMemo(() => mergeCategories(metadata.categories), [metadata.categories]);
+  const activeCategory = localFilters.category;
+  const browsingJewellery = isJewelleryCategory(activeCategory);
+  const heading = browsingJewellery ? "Imitation Jewellery" : "Curated Treasures";
+  const description = browsingJewellery
+    ? "Browse earrings, necklaces, bangles, and festive finishing pieces in a dedicated jewelry catalog."
+    : "Discover the finest handloom sarees and signature occasionwear curated for every celebration.";
 
   const toggleFilters = () => setIsFilterOpen(!isFilterOpen);
   const closeFilters = () => setIsFilterOpen(false);
+
+  const handleProductClick = (product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
 
   // Synchronize local search with debounced URL update
   useEffect(() => {
@@ -100,15 +119,33 @@ export default function ShopPage() {
             <div className="max-w-2xl">
               <div className="flex items-center gap-2">
                 <span className="h-px w-6 bg-brand-600" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Catalog</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">
+                  {browsingJewellery ? "Jewellery Catalog" : "Catalog"}
+                </p>
               </div>
-              <h1 className="mt-4 text-3xl font-black tracking-tight text-stone-900 sm:text-5xl">Curated Treasures</h1>
-              <p className="mt-4 text-sm font-medium text-stone-500 sm:text-base">
-                Discover the finest handloom sarees, from timeless Silk to exquisite Paithani.
-              </p>
+              <h1 className="mt-4 text-3xl font-black tracking-tight text-stone-900 sm:text-5xl">{heading}</h1>
+              <p className="mt-4 text-sm font-medium text-stone-500 sm:text-base">{description}</p>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleFilterChange("category", "")}
+                className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] transition-all ${
+                  !activeCategory ? "bg-stone-900 text-white shadow-lg" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                }`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("category", JEWELLERY_CATEGORY)}
+                className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] transition-all ${
+                  browsingJewellery ? "bg-amber-500 text-stone-950 shadow-lg shadow-amber-100" : "bg-amber-50 text-amber-800 hover:bg-amber-100"
+                }`}
+              >
+                Jewellery
+              </button>
               <button 
                 onClick={toggleFilters}
                 className="flex items-center gap-2 rounded-2xl bg-stone-900 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-xl transition-all hover:bg-stone-800 active:scale-95 xl:hidden"
@@ -148,7 +185,18 @@ export default function ShopPage() {
                 </p>
               </div>
               
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <select
+                  value={localFilters.sort}
+                  onChange={(event) => handleFilterChange("sort", event.target.value)}
+                  className="rounded-2xl border-0 bg-[#6d28d9] px-5 py-3 text-sm font-bold text-white shadow-xl shadow-violet-200 outline-none"
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value} className="bg-white text-stone-900">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
                 {Object.entries(cleanFilters(readFilters(searchParams))).map(([key, value]) => {
                   if (key === "sort") return null;
                   return (
@@ -210,7 +258,7 @@ export default function ShopPage() {
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <ProductCard product={product} />
+                      <ProductCard product={product} onCardClick={handleProductClick} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -266,6 +314,13 @@ export default function ShopPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Product Modal */}
+      <ProductModal 
+        product={selectedProduct} 
+        open={isModalOpen} 
+        onClose={closeModal} 
+      />
     </div>
   );
 }

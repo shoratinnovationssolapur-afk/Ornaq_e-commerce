@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import axios from "axios";
 import { StatusCodes } from "http-status-codes";
 import User from "../models/User.js";
 import { sendEmail } from "../services/emailService.js";
@@ -35,6 +36,34 @@ const ensureProvider = (user, provider) => {
 const buildOtpHash = (code) => crypto.createHash("sha256").update(String(code)).digest("hex");
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
+const verifyGoogleCredential = async (credential) => {
+  if (!credential) {
+    throw new Error("Google credential is required.");
+  }
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    throw new Error("Google OAuth is not configured on the server.");
+  }
+
+  const { data } = await axios.get("https://oauth2.googleapis.com/tokeninfo", {
+    params: { id_token: credential },
+    timeout: 5000
+  });
+
+  if (data.aud !== process.env.GOOGLE_CLIENT_ID) {
+    throw new Error("Google credential audience does not match this app.");
+  }
+  if (data.email_verified !== "true" && data.email_verified !== true) {
+    throw new Error("Google email is not verified.");
+  }
+
+  return {
+    email: data.email,
+    name: data.name || data.email,
+    googleId: data.sub,
+    avatar: data.picture || ""
+  };
+};
 
 export const register = async (req, res) => {
   const { name, email, password, phone, role } = req.body;
@@ -80,6 +109,11 @@ export const login = async (req, res) => {
   if (!user || !(await user.matchPassword(password))) {
     return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid credentials" });
   }
+
+  if (normalizeRole(user.role) !== "user") {
+    return res.status(StatusCodes.FORBIDDEN).json({ message: "You are not a user or invalid credentials" });
+  }
+
   return res.status(StatusCodes.OK).json(buildAuthResponse(user));
 };
 
@@ -104,7 +138,7 @@ export const requestOtp = async (req, res) => {
   const expiryMinutes = parseInt(process.env.OTP_EXPIRY_MINUTES || "5");
   user.otpLogin = {
     codeHash: buildOtpHash(otp),
-    expiresAt: new Date(Date.now() + 1000 * 60 * expiryMinutes),
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * expiryMinutes),
     attempts: 0
   };
   ensureProvider(user, "mobile_otp");
@@ -157,7 +191,16 @@ export const verifyOtp = async (req, res) => {
 };
 
 export const googleLogin = async (req, res) => {
-  const { email, name, googleId, avatar } = req.body;
+  let { email, name, googleId, avatar } = req.body;
+
+  if (req.body.credential) {
+    try {
+      ({ email, name, googleId, avatar } = await verifyGoogleCredential(req.body.credential));
+    } catch (error) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({ message: error.message || "Google authentication failed." });
+    }
+  }
+
   if (!email || !name) {
     return res.status(StatusCodes.BAD_REQUEST).json({ message: "Google profile data is required." });
   }
@@ -245,4 +288,26 @@ export const resetPassword = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   res.json(serializeUser(req.user));
+};
+
+// --- NEW METHOD: UPDATE USER SANCTUARY PREFERENCES ---
+export const updateProfile = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({ 
+      message: "User context workspace not found." 
+    });
+  }
+
+  // Selective validation assignments
+  if (req.body.name !== undefined) user.name = req.body.name;
+  if (req.body.phone !== undefined) user.phone = req.body.phone;
+
+  const updatedUser = await user.save();
+
+  return res.status(StatusCodes.OK).json({
+    message: "Profile preferences updated safely.",
+    user: serializeUser(updatedUser) // Returns matching structure expected by your context mapping
+  });
 };

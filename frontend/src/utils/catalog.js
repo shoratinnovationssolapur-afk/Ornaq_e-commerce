@@ -1,13 +1,15 @@
 const defaultProductImage = "https://placehold.co/900x1200/f2e8dc/6f4b3e?text=Ornac";
 
-export const categoryOptions = ["Silk", "Paithani", "Cotton", "Wedding Sarees"];
+export const JEWELLERY_CATEGORY = "Imitation Jewellery";
+
+export const categoryOptions = ["Silk", "Paithani", "Cotton", "Wedding Sarees", JEWELLERY_CATEGORY];
 
 export const sortOptions = [
-  { label: "Newest first", value: "newest" },
-  { label: "Price: Low to High", value: "priceAsc" },
-  { label: "Price: High to Low", value: "priceDesc" },
-  { label: "Trending", value: "trending" },
-  { label: "Bestselling", value: "bestselling" }
+  { label: "Default sorting", value: "default" },
+  { label: "Sort by popularity", value: "popularity" },
+  { label: "Sort by latest", value: "latest" },
+  { label: "Sort by price: low to high", value: "priceAsc" },
+  { label: "Sort by price: high to low", value: "priceDesc" }
 ];
 
 export const defaultShopFilters = {
@@ -17,7 +19,7 @@ export const defaultShopFilters = {
   color: "",
   minPrice: "",
   maxPrice: "",
-  sort: "newest",
+  sort: "default",
   isNewArrival: ""
 };
 
@@ -40,10 +42,38 @@ export const formatCurrency = (value) =>
     maximumFractionDigits: 0
   }).format(Number(value || 0));
 
-export const getProductImage = (product) => product?.images?.[0]?.url || defaultProductImage;
+export const getProductImage = (product, selectedColor = "") => {
+  const selectedVariant = Array.isArray(product?.variants)
+    ? product.variants.find(
+        (variant) => String(variant.color || "").toLowerCase() === String(selectedColor || "").toLowerCase()
+      )
+    : null;
+
+  return selectedVariant?.images?.[0]?.url || product?.images?.[0]?.url || defaultProductImage;
+};
+
+export const getProductModelImages = (product) =>
+  Array.isArray(product?.modelImages) ? product.modelImages.filter((image) => image?.url) : [];
+
+export const getMarketPrice = (product) => Number(product?.marketPrice ?? product?.price ?? 0);
+
+export const getOfferPrice = (product) => Number(product?.offerPrice ?? product?.discountPrice ?? product?.price ?? 0);
+
+export const hasOfferPrice = (product) => getMarketPrice(product) > getOfferPrice(product);
 
 export const getProductColors = (product) => {
   const colors = Array.isArray(product?.colors) ? product.colors.filter(Boolean) : [];
   if (colors.length) return colors;
   return product?.color ? [product.color] : [];
 };
+
+export const getProductSizes = (product) =>
+  Array.isArray(product?.sizes) ? product.sizes.filter(Boolean) : [];
+
+export const isJewelleryCategory = (category = "") =>
+  String(category).trim().toLowerCase() === JEWELLERY_CATEGORY.toLowerCase();
+
+export const getProductTypeLabel = (productOrCategory) =>
+  isJewelleryCategory(typeof productOrCategory === "string" ? productOrCategory : productOrCategory?.category)
+    ? "Jewellery"
+    : "Saree";

@@ -22,6 +22,22 @@ export const protect = async (req, res, next) => {
   }
 };
 
+export const optionalProtect = async (req, _res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select("-password");
+  } catch {
+    req.user = null;
+  }
+
+  next();
+};
+
 export const authorize = (...roles) => (req, res, next) => {
   if (!roles.map(normalizeRole).includes(normalizeRole(req.user.role))) {
     return res.status(StatusCodes.FORBIDDEN).json({ message: "Forbidden" });

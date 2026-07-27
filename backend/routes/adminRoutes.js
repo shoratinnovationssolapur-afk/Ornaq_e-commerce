@@ -2,7 +2,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import { body } from "express-validator";
 import { adminLogin } from "../controllers/authController.js";
-import { getDashboardStats } from "../controllers/adminController.js";
+import { downloadSalesRegister, getDashboardStats } from "../controllers/adminController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 
@@ -26,5 +26,6 @@ router.post(
 );
 
 router.get("/dashboard", protect, authorize("admin"), getDashboardStats);
+router.get("/sales-register/download", protect, authorize("admin"), downloadSalesRegister);
 
 export default router;

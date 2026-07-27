@@ -35,16 +35,24 @@ const productSchema = new mongoose.Schema(
     slug: { type: String, unique: true, required: true },
     description: { type: String, required: true },
     category: { type: String, required: true, trim: true, index: true },
+    
+    // 💡 FIXED: Added categoryCover here so Mongoose allows saving the string Cloudinary URL!
+    categoryCover: { type: String, trim: true }, 
+
     fabric: { type: String, required: true, index: true },
     color: { type: String, required: true, index: true },
     colors: [{ type: String, trim: true, index: true }],
+    sizes: [{ type: String, trim: true, index: true }],
     variants: [variantSchema],
     price: { type: Number, required: true, min: 0, index: true },
+    marketPrice: { type: Number, min: 0, index: true },
+    offerPrice: { type: Number, min: 0, index: true },
     discount: { type: Number, default: 0, min: 0, max: 90 },
     discountPercent: { type: Number, default: 0, min: 0, max: 90 },
     discountPrice: { type: Number, min: 0 },
     stock: { type: Number, required: true, min: 0, index: true },
     images: [imageSchema],
+    modelImages: [imageSchema],
     featured: { type: Boolean, default: false, index: true },
     isNewArrival: { type: Boolean, default: false, index: true },
     newArrivalExpiresAt: Date,
@@ -55,10 +63,22 @@ const productSchema = new mongoose.Schema(
     analytics: { type: analyticsSchema, default: () => ({}) },
     averageRating: { type: Number, default: 0, min: 0, max: 5 },
     totalReviews: { type: Number, default: 0, min: 0 },
+    classification: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     deliveryEstimate: {
       minDays: { type: Number, default: 3, min: 1 },
       maxDays: { type: Number, default: 5, min: 1 }
     },
+    sareeCode: {
+      type: String,
+      unique: true,
+      trim: true,
+      index: true
+    },
+    youtubeLink: { type: String, trim: true },
     serviceablePincodes: [{ type: String }],
     qrCodeUrl: String
   },

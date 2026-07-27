@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../../services/api";
+import { categoryOptions } from "../../utils/catalog";
 
 export default function ProductManagement({ products, refreshProducts }) {
   const [submitting, setSubmitting] = useState(false);
@@ -58,9 +59,9 @@ export default function ProductManagement({ products, refreshProducts }) {
           <div className="md:col-span-2 text-sm font-bold text-zinc-400 uppercase tracking-tight">New Product Details</div>
           <input required className="rounded-lg border bg-white p-2.5" placeholder="Product Name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
           <select className="rounded-lg border bg-white p-2.5" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}>
-            {["Silk", "Cotton", "Wedding", "Casual"].map((category) => <option key={category}>{category}</option>)}
+            {categoryOptions.map((category) => <option key={category}>{category}</option>)}
           </select>
-          <input required className="rounded-lg border bg-white p-2.5" placeholder="Fabric (e.g. Banarasi)" value={form.fabric} onChange={(e) => setForm((f) => ({ ...f, fabric: e.target.value }))} />
+          <input required className="rounded-lg border bg-white p-2.5" placeholder="Fabric or material" value={form.fabric} onChange={(e) => setForm((f) => ({ ...f, fabric: e.target.value }))} />
           <input required className="rounded-lg border bg-white p-2.5" placeholder="Color" value={form.color} onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))} />
           <input required className="rounded-lg border bg-white p-2.5" type="number" placeholder="Price (Rs)" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
           <input required className="rounded-lg border bg-white p-2.5" type="number" placeholder="Initial Stock" value={form.stock} onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))} />
@@ -71,7 +72,7 @@ export default function ProductManagement({ products, refreshProducts }) {
           </div>
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" className="h-4 w-4 rounded border-zinc-300" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
-            Show on Home Page (Featured)
+            Show in highlighted sections
           </label>
           <button disabled={submitting} className="md:col-span-2 rounded-lg bg-brand-700 py-3 font-bold text-white shadow-lg shadow-brand-100 hover:bg-brand-800 disabled:opacity-50">
             {submitting ? "Uploading & Saving..." : "Publish Product"}

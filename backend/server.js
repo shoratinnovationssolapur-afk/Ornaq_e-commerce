@@ -19,6 +19,8 @@ import cartRoutes from "./routes/cartRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import policyRoutes from "./routes/policyRoutes.js";
+import storyRoutes from "./routes/storyRoutes.js";
 
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
@@ -27,8 +29,9 @@ const server = http.createServer(app);
 
 const isProduction = process.env.NODE_ENV === "production";
 const defaultOrigins = [
-  "https://ornaq-frontend.vercel.app",
-  "https://ornaq-frontend-ng6cvkfd8-shindeharsh2121-6097s-projects.vercel.app", // User provided
+  "https://ornaq.in",
+  "https://www.ornaq.in", // User provided
+  "http://localhost:4173",
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
@@ -42,7 +45,7 @@ const allowedOrigins = Array.from(
   new Set(
     [
       ...defaultOrigins,
-      ...(process.env.CLIENT_URL || "")
+      ...(process.env.CLIENT_URL || "http://localhost:5173")
         .split(",")
         .map((origin) => origin.trim().replace(/\/+$/, ""))
         .filter(Boolean)
@@ -81,7 +84,7 @@ const buildCorsOptions = () => ({
     "Access-Control-Request-Method",
     "Access-Control-Request-Headers"
   ],
-  exposedHeaders: ["Set-Cookie"]
+  exposedHeaders: ["Set-Cookie", "Content-Disposition", "Content-Type"]
 });
 
 const corsOptions = buildCorsOptions();
@@ -135,6 +138,8 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/policies", policyRoutes);
+app.use("/api/stories", storyRoutes);
 
 /* error handlers */
 app.use(notFound);

@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import Product from "../models/Product.js";
+import Story from "../models/Story.js";
 import { getProductDiscovery } from "../services/recommendationService.js";
 import { isServiceablePincode } from "../utils/serviceability.js";
 import {
@@ -9,12 +10,15 @@ import {
   calculatePopularityScore,
   escapeRegex,
   getEffectivePrice,
+  getMarketPrice,
+  getOfferPrice,
   isNewArrivalActive,
   normalizeColorList,
   toSlug
 } from "../utils/productUtils.js";
 
 const normalizeString = (value) => (typeof value === "string" ? value.trim() : "");
+const JEWELLERY_CATEGORY = "Imitation Jewellery";
 
 const parseNumber = (value, fallback) => {
   if (value === "" || value === undefined || value === null) return fallback;
@@ -74,13 +78,43 @@ const buildExactMatch = (value) => {
   };
 };
 
+const buildSareeCodeSearch = (value, exact = false) => {
+  const code = normalizeString(value);
+  const escapedCode = exact ? `^${escapeRegex(code)}$` : escapeRegex(code);
+
+  return {
+    $or: [
+      { sareeCode: { $regex: escapedCode, $options: "i" } },
+      {
+        $expr: {
+          $regexMatch: {
+            input: { $toString: { $ifNull: ["$sareeCode", ""] } },
+            regex: escapedCode,
+            options: "i"
+          }
+        }
+      }
+    ]
+  };
+};
+
+const buildSearchOr = (query) => [
+  { name: { $regex: escapeRegex(query), $options: "i" } },
+  buildSareeCodeSearch(query),
+  { fabric: { $regex: escapeRegex(query), $options: "i" } },
+  { category: { $regex: escapeRegex(query), $options: "i" } },
+  { colors: { $regex: escapeRegex(query), $options: "i" } }
+];
+
 const resolveSort = (sort) =>
   (
     {
       newest: "-createdAt",
+      latest: "-createdAt",
+      default: "-createdAt",
       oldest: "createdAt",
-      priceAsc: "price",
-      priceDesc: "-price",
+      priceAsc: "offerPrice discountPrice price",
+      priceDesc: "-offerPrice -discountPrice -price",
       trending: "-popularityScore -views",
       bestselling: "-soldCount -analytics.purchases",
       popularity: "-popularityScore -views"
@@ -110,6 +144,9 @@ const withPopularity = (product) => {
 const formatProduct = (product) => {
   const doc = typeof product.toObject === "function" ? product.toObject() : { ...product };
   const colors = normalizeColorList(doc.colors, doc.color);
+  const sizes = parseArrayInput(doc.sizes);
+  const marketPrice = getMarketPrice(doc);
+  const offerPrice = getOfferPrice(doc);
   const variants =
     Array.isArray(doc.variants) && doc.variants.length
       ? doc.variants
@@ -125,15 +162,21 @@ const formatProduct = (product) => {
     ...doc,
     color: doc.color || colors[0] || "Multicolor",
     colors,
+    sizes,
     variants,
     images: sanitizeImages(doc.images),
+    modelImages: sanitizeImages(doc.modelImages),
+    marketPrice,
+    offerPrice,
+    price: marketPrice,
+    discountPrice: offerPrice,
     analytics: {
       views: Number(doc.analytics?.views ?? doc.views ?? 0),
       cartAdds: Number(doc.analytics?.cartAdds ?? 0),
       wishlistAdds: Number(doc.analytics?.wishlistAdds ?? 0),
       purchases: Number(doc.analytics?.purchases ?? doc.soldCount ?? 0)
     },
-    effectivePrice: getEffectivePrice(doc),
+    effectivePrice: offerPrice || getEffectivePrice(doc),
     isNewArrival: isNewArrivalActive(doc)
   });
 };
@@ -143,13 +186,24 @@ const buildProductPayload = (body, previousProduct) => {
   const slug = toSlug(name);
   const productUrl = buildProductUrl(slug);
   const createdAt = body.createdAt || previousProduct?.createdAt || Date.now();
-  const price = parseNumber(body.price, previousProduct?.price ?? 0);
+  const marketPrice = parseNumber(body.marketPrice ?? body.price, previousProduct?.marketPrice ?? previousProduct?.price ?? 0);
   const discount = Math.max(
     0,
     parseNumber(body.discount ?? body.discountPercent, previousProduct?.discount ?? previousProduct?.discountPercent ?? 0)
   );
+  const previousOfferPrice =
+    previousProduct?.offerPrice ??
+    previousProduct?.discountPrice ??
+    calculateDiscountPrice(previousProduct?.marketPrice ?? previousProduct?.price ?? marketPrice, previousProduct?.discountPercent ?? 0);
+  const legacyDiscountOfferPrice = discount > 0 ? calculateDiscountPrice(marketPrice, discount) : previousOfferPrice;
+  const offerPrice = Math.max(
+    0,
+    parseNumber(body.offerPrice ?? body.discountPrice, legacyDiscountOfferPrice ?? marketPrice)
+  );
   const images = sanitizeImages(Array.isArray(body.images) ? body.images : previousProduct?.images || []);
+  const modelImages = sanitizeImages(Array.isArray(body.modelImages) ? body.modelImages : previousProduct?.modelImages || []);
   const colors = normalizeColorList(parseArrayInput(body.colors), body.color || previousProduct?.color || "");
+  const sizes = parseArrayInput(body.sizes).length ? parseArrayInput(body.sizes) : previousProduct?.sizes || [];
   const variants = buildVariantPayload({
     colors,
     variants: parseVariantsInput(body.variants),
@@ -179,13 +233,19 @@ const buildProductPayload = (body, previousProduct) => {
     fabric: normalizeString(body.fabric) || previousProduct?.fabric || "Soft Silk",
     color: colors[0] || normalizeString(body.color) || previousProduct?.color || "Multicolor",
     colors,
+    sizes,
     variants,
-    price,
-    discount,
-    discountPercent: discount,
-    discountPrice: calculateDiscountPrice(price, discount),
+    price: marketPrice,
+    marketPrice,
+    offerPrice,
+    discount: 0,
+    discountPercent: 0,
+    discountPrice: offerPrice,
     stock: computedStock,
     images,
+    modelImages,
+    sareeCode: normalizeString(body.sareeCode) || previousProduct?.sareeCode,
+    youtubeLink: normalizeString(body.youtubeLink) || previousProduct?.youtubeLink || "",
     featured: parseBoolean(body.featured, previousProduct?.featured ?? false),
     isNewArrival,
     newArrivalExpiresAt:
@@ -329,7 +389,7 @@ export const getProducts = async (req, res) => {
     limit,
     minPrice = 0,
     maxPrice = Number.MAX_SAFE_INTEGER,
-    sort = "newest"
+    sort = "default"
   } = req.query;
   const nameSearch = normalizeString(searchQuery || q);
   const filter = {
@@ -340,12 +400,7 @@ export const getProducts = async (req, res) => {
     ...(excludeId ? { _id: { $ne: excludeId } } : {}),
     ...(nameSearch
       ? {
-          $or: [
-            { name: { $regex: escapeRegex(nameSearch), $options: "i" } },
-            { fabric: { $regex: escapeRegex(nameSearch), $options: "i" } },
-            { category: { $regex: escapeRegex(nameSearch), $options: "i" } },
-            { colors: { $regex: escapeRegex(nameSearch), $options: "i" } }
-          ]
+          $or: buildSearchOr(nameSearch)
         }
       : {}),
     ...(category ? { category: buildExactMatch(category) } : {}),
@@ -394,11 +449,12 @@ export const getSearchSuggestions = async (req, res) => {
   const suggestions = await Product.find({
     $or: [
       { name: { $regex: escapeRegex(query), $options: "i" } },
+      buildSareeCodeSearch(query),
       { category: { $regex: escapeRegex(query), $options: "i" } },
       { fabric: { $regex: escapeRegex(query), $options: "i" } }
     ]
   })
-    .select("name slug category fabric color colors price discountPrice discountPercent images isNewArrival")
+    .select("name slug sareeCode category fabric color colors price marketPrice offerPrice discountPrice images modelImages isNewArrival")
     .limit(8)
     .lean();
 
@@ -437,16 +493,23 @@ export const getNewArrivals = async (_req, res) => {
 };
 
 export const getHomeFeed = async (_req, res) => {
-  const [newArrivals, trending, featured] = await Promise.all([
+  const [newArrivals, trending, featured, jewellerySpotlight, stories] = await Promise.all([
     Product.find({ isNewArrival: true }).sort({ createdAt: -1 }).limit(8).lean(),
     Product.find().sort({ popularityScore: -1, soldCount: -1, views: -1 }).limit(8).lean(),
-    Product.find({ featured: true }).sort({ createdAt: -1 }).limit(8).lean()
+    Product.find({ featured: true }).sort({ createdAt: -1 }).limit(8).lean(),
+    Product.find({ category: new RegExp(`^${escapeRegex(JEWELLERY_CATEGORY)}$`, "i") })
+      .sort({ featured: -1, createdAt: -1 })
+      .limit(8)
+      .lean(),
+    Story.find({ published: true }).sort({ sortOrder: 1, createdAt: -1 }).limit(8).lean()
   ]);
 
   res.json({
     newArrivals: newArrivals.map(formatProduct).filter((product) => product.isNewArrival),
     trending: trending.map(formatProduct),
-    recommended: featured.map(formatProduct)
+    recommended: featured.map(formatProduct),
+    jewellerySpotlight: jewellerySpotlight.map(formatProduct),
+    stories
   });
 };
 
@@ -460,4 +523,17 @@ export const getProductDiscoveryFeed = async (req, res) => {
   const discovery = await getProductDiscovery(req.params.id);
   if (!discovery) return res.status(StatusCodes.NOT_FOUND).json({ message: "Product not found" });
   res.json(discovery);
+};
+
+export const getProductBySareeCode = async (req, res) => {
+   const code = normalizeString(req.params.code);
+   const product = await Product.findOne(buildSareeCodeSearch(code, true)).lean();
+
+   if (!product) {
+      return res.status(404).json({
+         message: "Product not found"
+      });
+   }
+
+   res.json(formatProduct(product));
 };

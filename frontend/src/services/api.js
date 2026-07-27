@@ -1,22 +1,22 @@
 import axios from "axios";
+import { clearStoredToken, getStoredToken, isTokenExpired } from "../utils/authSession";
 
 const trimTrailingSlash = (value = "") => value.replace(/\/+$/, "");
+const isLocalhostUrl = (value = "") => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(value);
+const productionApiUrl = "https://api.ornaq.in/api";
 
 const resolveApiBaseUrl = () => {
-  const configuredUrl =
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_VITE_API_URL;
+  const configuredUrl = import.meta.env.VITE_API_URL;
 
   if (configuredUrl) {
     const url = trimTrailingSlash(configuredUrl);
+    if (import.meta.env.PROD && isLocalhostUrl(url)) {
+      return productionApiUrl;
+    }
     return url.endsWith("/api") ? url : `${url}/api`;
   }
 
-  if (import.meta.env.DEV) {
-    return "http://localhost:5000/api";
-  }
-
-  return "https://ornaq-backend-j3eg.onrender.com/api";
+  return productionApiUrl;
 };
 
 const api = axios.create({
@@ -26,7 +26,13 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = getStoredToken();
+  if (token && isTokenExpired(token)) {
+    clearStoredToken();
+    delete config.headers.Authorization;
+    return config;
+  }
+
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -36,6 +42,10 @@ api.interceptors.response.use(
   (error) => {
     if (!error.response) {
       error.userMessage = "Unable to reach the server. Please try again in a few seconds.";
+    }
+
+    if (error.response?.status === 401) {
+      clearStoredToken();
     }
 
     return Promise.reject(error);

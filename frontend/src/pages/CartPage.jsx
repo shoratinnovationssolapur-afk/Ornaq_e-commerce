@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
-import { formatCurrency, getProductImage } from "../utils/catalog";
+import { formatCurrency, getOfferPrice, getProductImage } from "../utils/catalog";
 
 export default function CartPage() {
   const { cart, cartSummary, removeFromCart, updateCartQuantity } = useStore();
-  const shipping = cartSummary.subtotal >= 999 ? 0 : 50;
+  const shipping = 0;
   const total = cartSummary.subtotal + shipping;
 
   return (
@@ -38,7 +38,7 @@ export default function CartPage() {
             {cart.map((item) => (
               <article key={`${item._id}-${item.selectedColor || "default"}`} className="group relative flex gap-6 rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-xl shadow-stone-100 transition-all hover:shadow-stone-200/50">
                 <Link to={`/product/${item.slug}`} className="relative aspect-[3/4] w-28 shrink-0 overflow-hidden rounded-2xl bg-stone-50 sm:w-32">
-                  <img src={getProductImage(item)} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <img src={getProductImage(item, item.selectedColor)} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 </Link>
                 
                 <div className="flex flex-1 flex-col py-1">
@@ -73,7 +73,7 @@ export default function CartPage() {
                         className="flex h-10 w-10 items-center justify-center rounded-lg text-lg font-black transition-colors hover:bg-white hover:text-brand-700"
                       >+</button>
                     </div>
-                    <p className="text-lg font-black text-stone-900">{formatCurrency((item.discountPrice || item.price) * item.qty)}</p>
+                    <p className="text-lg font-black text-stone-900">{formatCurrency(getOfferPrice(item) * item.qty)}</p>
                   </div>
                 </div>
               </article>
@@ -100,13 +100,9 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {shipping > 0 && (
-                <div className="mt-6 rounded-2xl bg-brand-50 p-4">
-                  <p className="text-xs font-bold leading-relaxed text-brand-800">
-                    Add {formatCurrency(999 - cartSummary.subtotal)} more to your bag to unlock <span className="font-black">FREE SHIPPING</span>.
-                  </p>
-                </div>
-              )}
+              <div className="mt-6 rounded-2xl bg-brand-50 p-4">
+                <p className="text-xs font-bold leading-relaxed text-brand-800">FREE SHIPPING ALL OVER INDIA.</p>
+              </div>
 
               <Link 
                 to="/checkout" 

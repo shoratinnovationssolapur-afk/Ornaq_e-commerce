@@ -4,7 +4,7 @@ import api from "../services/api";
 import { useRealtime } from "../hooks/useRealtime";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import ProductEditor from "../components/admin/ProductEditor";
-import { cleanFilters, formatCurrency, getProductImage, mergeCategories } from "../utils/catalog";
+import { cleanFilters, formatCurrency, getMarketPrice, getOfferPrice, getProductImage, hasOfferPrice, mergeCategories } from "../utils/catalog";
 
 export default function ProductManagementPage() {
   const [products, setProducts] = useState([]);
@@ -79,7 +79,7 @@ export default function ProductManagementPage() {
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Inventory</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-stone-900 sm:text-5xl">Catalog Sovereignty</h1>
             <p className="mt-4 max-w-2xl text-sm font-medium text-stone-500 sm:text-base">
-              Orchestrate your luxury collection. Search inventory, refine metadata, and maintain real-time stock integrity across your premium handloom catalog.
+              Orchestrate your luxury collection. Search inventory, refine metadata, and maintain real-time stock integrity across sarees and imitation jewellery.
             </p>
           </div>
           <Link to="/admin/products/add" className="btn-primary px-8 lg:mb-2">
@@ -91,7 +91,7 @@ export default function ProductManagementPage() {
           <div className="lg:col-span-2">
             <input
               type="search"
-              placeholder="Search by name, fabric, or keyword..."
+              placeholder="Search by name, material, or keyword..."
               className="w-full rounded-2xl bg-stone-50 px-5 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all"
               value={filters.searchQuery}
               onChange={(event) => setFilters((current) => ({ ...current, searchQuery: event.target.value }))}
@@ -146,9 +146,14 @@ export default function ProductManagementPage() {
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <span className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-brand-800">{product.category}</span>
+                      <span className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-brand-800">{product.classification}</span>
                     </td>
-                    <td className="px-8 py-6 font-black text-stone-900">{formatCurrency(product.price)}</td>
+                    <td className="px-8 py-6">
+                      <p className="font-black text-stone-900">{formatCurrency(getOfferPrice(product))}</p>
+                      {hasOfferPrice(product) && (
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-300 line-through">{formatCurrency(getMarketPrice(product))}</p>
+                      )}
+                    </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-center">
                         <div className="flex items-center overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-xl shadow-stone-100/50">
@@ -209,10 +214,10 @@ export default function ProductManagementPage() {
                   <img src={getProductImage(product)} alt={product.name} className="h-full w-full object-cover" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-700">{product.category}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-700">{product.classification}</p>
                   <p className="mt-1 font-black text-stone-900 leading-tight">{product.name}</p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-300">{product.fabric} • {product.color}</p>
-                  <p className="mt-3 text-lg font-black text-stone-900">{formatCurrency(product.price)}</p>
+                  <p className="mt-3 text-lg font-black text-stone-900">{formatCurrency(getOfferPrice(product))}</p>
                 </div>
               </div>
               <div className="mt-8 flex items-center justify-between gap-4">

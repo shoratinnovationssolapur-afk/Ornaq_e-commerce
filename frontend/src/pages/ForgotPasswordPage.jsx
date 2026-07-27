@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
         </button>
 
         <p className="text-center text-[10px] font-black uppercase tracking-widest text-stone-400">
-          Recalled credentials? <Link to="/login" className="text-brand-700 hover:text-brand-800 underline underline-offset-4">Sign In</Link>
+          Recalled credentials? <Link to="/admin/login" className="text-brand-700 hover:text-brand-800 underline underline-offset-4">Sign In</Link>
         </p>
       </form>
     </AuthLayout>

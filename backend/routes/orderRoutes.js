@@ -11,14 +11,14 @@ import {
   requestReturn,
   updateOrderStatus
 } from "../controllers/orderController.js";
-import { authorize, protect } from "../middleware/authMiddleware.js";
+import { authorize, optionalProtect, protect } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 
 const router = express.Router();
 
 router.post(
   "/",
-  protect,
+  optionalProtect,
   [
     body("items").isArray({ min: 1 }),
     body("paymentMethod").optional().isIn(["COD", "MOCK", "RAZORPAY", "STRIPE"]),

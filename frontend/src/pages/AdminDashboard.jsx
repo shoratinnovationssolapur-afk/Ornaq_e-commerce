@@ -4,6 +4,7 @@ import api from "../services/api";
 import { useRealtime } from "../hooks/useRealtime";
 import AdminStats from "../components/admin/AdminStats";
 import OrderManagement from "../components/admin/OrderManagement";
+import SalesRegisterPanel from "../components/admin/SalesRegisterPanel";
 import { formatCurrency, getProductImage } from "../utils/catalog";
 
 export default function AdminDashboard() {
@@ -17,7 +18,12 @@ export default function AdminDashboard() {
     recentOrders: [],
     dailyRevenue: [],
     topSellingProducts: [],
-    productAnalytics: []
+    productAnalytics: [],
+    salesRegister: {
+      fileName: "order-sales-register.xlsx",
+      updatedAt: null,
+      sheets: []
+    }
   });
   const [orders, setOrders] = useState([]);
   const [orderFilter, setOrderFilter] = useState("");
@@ -54,7 +60,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#fffdf9] pb-20">
-      <header className="border-b border-stone-100 bg-white/80 backdrop-blur-xl sticky top-16 z-50">
+      <header className="border-b border-stone-100 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-700">Command Center</p>
@@ -67,6 +73,9 @@ export default function AdminDashboard() {
             <Link to="/admin/products" className="btn-secondary px-8">
               Catalog
             </Link>
+            <Link to="/admin/policies" className="btn-secondary px-8">
+              Policies
+            </Link>
             <Link to="/admin/products/add" className="btn-primary px-8">
               New Product
             </Link>
@@ -74,7 +83,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto mt-10 max-w-7xl px-6 sm:px-8">
+      <main className="mx-auto mt-12 max-w-7xl px-6 sm:px-8">
         <AdminStats dashboard={dashboard} />
 
         <div className="mt-12 grid gap-8 lg:grid-cols-2">
@@ -125,7 +134,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-black text-stone-900">{product.name}</p>
-                    <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-widest text-stone-400">{product.category} • {product.fabric}</p>
+                    <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-widest text-stone-400">{product.classification} • {product.fabric}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-lg font-black text-amber-600">{product.stock}</span>
@@ -156,7 +165,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-black text-stone-900">{product.name}</p>
-                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">{product.category}</p>
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">{product.classification}</p>
                   </div>
                 </div>
                 <div className="mt-6 flex items-center justify-between border-b border-stone-50 pb-4">
@@ -185,6 +194,8 @@ export default function AdminDashboard() {
             ))}
           </div>
         </section>
+
+        <SalesRegisterPanel salesRegister={dashboard.salesRegister} />
 
         <div className="mt-12 rounded-[3rem] border border-stone-100 bg-white p-8 shadow-2xl shadow-stone-200/50 sm:p-12">
           {loading ? (

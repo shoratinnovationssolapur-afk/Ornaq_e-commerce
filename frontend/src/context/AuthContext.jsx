@@ -1,17 +1,20 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { syncSocketAuth } from "../services/socket";
+import { clearStoredToken, getStoredToken, hasValidStoredToken, onAuthSessionChange, setStoredToken } from "../utils/authSession";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isAdmin = useMemo(() => String(user?.role || "").toLowerCase() === "admin", [user]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getStoredToken();
     syncSocketAuth();
-    if (!token) {
+    if (!token || !hasValidStoredToken()) {
+      if (token) clearStoredToken();
       setLoading(false);
       return;
     }
@@ -19,15 +22,22 @@ export function AuthProvider({ children }) {
       .get("/auth/profile")
       .then((res) => setUser(res.data))
       .catch(() => {
-        localStorage.removeItem("token");
+        clearStoredToken();
         setUser(null);
         syncSocketAuth();
       })
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => onAuthSessionChange(() => {
+    if (!getStoredToken()) {
+      setUser(null);
+      syncSocketAuth();
+    }
+  }), []);
+
   const persistSession = (payload) => {
-    localStorage.setItem("token", payload.token);
+    setStoredToken(payload.token);
     setUser(payload.user);
     syncSocketAuth();
     return payload;
@@ -49,14 +59,11 @@ export function AuthProvider({ children }) {
   };
 
   const requestOtp = async ({ phone, name, email }) => {
-    console.log("Requesting OTP for:", phone);
     const res = await api.post("/auth/request-otp", { phone, name, email });
-    console.log("OTP Request Response:", res.data);
     return res.data;
   };
 
   const verifyOtp = async ({ phone, otp }) => {
-    console.log("Verifying OTP for:", phone, "with code:", otp);
     const res = await api.post("/auth/verify-otp", { phone, otp });
     return persistSession(res.data).user;
   };
@@ -67,14 +74,14 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    clearStoredToken();
     setUser(null);
     syncSocketAuth();
   };
 
   const value = useMemo(
-    () => ({ user, loading, login, adminLogin, register, requestOtp, verifyOtp, googleLogin, logout }),
-    [user, loading]
+    () => ({ user, isAdmin, loading, login, adminLogin, register, requestOtp, verifyOtp, googleLogin, logout }),
+    [user, isAdmin, loading]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

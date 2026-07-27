@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
 import { useRealtime } from "../hooks/useRealtime";
 import api from "../services/api";
 import ProductCard from "../components/ProductCard";
+import ProductMediaViewer from "../components/ProductMediaViewer";
 import ReviewSection from "../components/ReviewSection";
 import SkeletonBlock from "../components/SkeletonBlock";
-import { formatCurrency, getProductColors, getProductImage } from "../utils/catalog";
+import { formatCurrency, getMarketPrice, getOfferPrice, getProductColors, getProductTypeLabel, hasOfferPrice } from "../utils/catalog";
 
 export default function ProductPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { addToCart, markViewed, recentlyViewed } = useStore();
   const [product, setProduct] = useState(null);
   const [discovery, setDiscovery] = useState({
@@ -18,7 +20,6 @@ export default function ProductPage() {
     frequentlyBoughtTogether: []
   });
   const [selectedColor, setSelectedColor] = useState("");
-  const [activeImage, setActiveImage] = useState("");
   const [checkingPincode, setCheckingPincode] = useState(false);
   const [pincode, setPincode] = useState("");
   const [serviceability, setServiceability] = useState(null);
@@ -28,7 +29,6 @@ export default function ProductPage() {
     api.get(`/products/${slug}`).then((response) => {
       setProduct(response.data);
       setSelectedColor(response.data.color || response.data.colors?.[0] || "");
-      setActiveImage(response.data.images?.[0]?.url || "");
       markViewed(response.data);
       document.title = `${response.data.name} | Ornac`;
       api.get(`/products/discovery/${response.data._id}`).then((related) => setDiscovery(related.data)).catch(() => {});
@@ -39,17 +39,26 @@ export default function ProductPage() {
     onStockUpdate: ({ productId, stock }) => setProduct((current) => (current && current._id === productId ? { ...current, stock } : current))
   });
 
-  const effectivePrice = useMemo(() => product?.discountPrice || product?.price || 0, [product]);
+  const effectivePrice = useMemo(() => getOfferPrice(product), [product]);
+  const marketPrice = useMemo(() => getMarketPrice(product), [product]);
+  const showOffer = useMemo(() => hasOfferPrice(product), [product]);
   const productColors = useMemo(() => getProductColors(product), [product]);
+  const productTypeLabel = useMemo(() => getProductTypeLabel(product), [product]);
   const activeVariant = useMemo(
-    () => product?.variants?.find((variant) => variant.color === selectedColor) || null,
+    () =>
+      product?.variants?.find(
+        (variant) => String(variant.color).toLowerCase() === String(selectedColor).toLowerCase()
+      ) || null,
     [product, selectedColor]
   );
+  const availableStock = Number(activeVariant?.stock ?? product?.stock ?? 0);
+  const isOutOfStock = availableStock <= 0;
   const galleryImages = useMemo(() => {
     if (!product) return [];
     if (activeVariant?.images?.length) return activeVariant.images;
     return product.images || [];
   }, [product, activeVariant]);
+
   const recentlyViewedOthers = useMemo(
     () => recentlyViewed.filter((item) => item.slug !== slug).slice(0, 4),
     [recentlyViewed, slug]
@@ -64,6 +73,19 @@ export default function ProductPage() {
     } finally {
       setCheckingPincode(false);
     }
+  };
+
+  const buyNow = () => {
+    if (isOutOfStock) return;
+    navigate("/checkout", {
+      state: {
+        directItem: {
+          product,
+          quantity: 1,
+          selectedColor: selectedColor || product.color || product.colors?.[0] || ""
+        }
+      }
+    });
   };
 
   if (!product) {
@@ -86,37 +108,7 @@ export default function ProductPage() {
     <div className="mx-auto max-w-7xl px-4 py-6 sm:py-10">
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
         {/* Left Column: Gallery */}
-        <div className="space-y-4">
-          <div className="relative aspect-[3/4] overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-sm sm:aspect-[4/5] lg:aspect-square">
-            <img
-              src={activeImage || getProductImage(product)}
-              alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-700 hover:scale-110"
-            />
-            {product.isNewArrival && (
-              <span className="absolute left-4 top-4 rounded-full bg-amber-400 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">
-                New Arrival
-              </span>
-            )}
-          </div>
-          
-          {galleryImages.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
-              {galleryImages.map((image) => (
-                <button
-                  key={image.url}
-                  type="button"
-                  onClick={() => setActiveImage(image.url)}
-                  className={`relative h-20 w-20 flex-shrink-0 snap-start overflow-hidden rounded-2xl border-2 transition-all ${
-                    activeImage === image.url ? "border-brand-500 scale-95" : "border-transparent opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <img src={image.url} alt={product.name} className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductMediaViewer product={product} galleryImages={galleryImages} selectedColor={selectedColor} />
 
         {/* Right Column: Info */}
         <div className="flex flex-col pt-2 lg:pt-0">
@@ -124,7 +116,7 @@ export default function ProductPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
                 <h1 className="text-2xl font-black tracking-tight text-stone-900 sm:text-4xl">{product.name}</h1>
-                <p className="text-sm font-bold uppercase tracking-widest text-brand-700">{product.category} • {product.fabric}</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-brand-700">{product.classification} • {product.fabric}</p>
               </div>
               <div className="flex shrink-0 items-center gap-1 rounded-full bg-stone-900 px-3 py-1.5 text-white shadow-lg shadow-stone-200">
                 <span className="text-sm font-black">{Number(product.averageRating || 0).toFixed(1)}</span>
@@ -136,12 +128,10 @@ export default function ProductPage() {
 
             <div className="mt-6 flex items-baseline gap-3">
               <p className="text-3xl font-black text-stone-900 sm:text-4xl">{formatCurrency(effectivePrice)}</p>
-              {Number(product.discountPercent || 0) > 0 && (
+              {showOffer && (
                 <div className="flex items-center gap-2">
-                  <span className="text-lg text-stone-400 line-through">{formatCurrency(product.price)}</span>
-                  <span className="rounded-lg bg-red-100 px-2 py-1 text-xs font-black text-red-600">
-                    SAVE {product.discountPercent}%
-                  </span>
+                  <span className="text-lg text-stone-400 line-through">{formatCurrency(marketPrice)}</span>
+                  <span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">Offer price</span>
                 </div>
               )}
             </div>
@@ -152,7 +142,7 @@ export default function ProductPage() {
 
             {productColors.length > 0 && (
               <div>
-                <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Select Saree Color</p>
+                <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Select {productTypeLabel} Color</p>
                 <div className="flex flex-wrap gap-3">
                   {productColors.map((color) => (
                     <button
@@ -176,10 +166,12 @@ export default function ProductPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-3xl border border-stone-100 bg-emerald-50/30 p-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-sm font-black text-emerald-800 uppercase tracking-wider">In Stock</p>
+                  <div className={`h-2 w-2 rounded-full ${isOutOfStock ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`} />
+                  <p className={`text-sm font-black uppercase tracking-wider ${isOutOfStock ? "text-red-700" : "text-emerald-800"}`}>
+                    {isOutOfStock ? "Sold Out" : "In Stock"}
+                  </p>
                 </div>
-                <p className="text-2xl font-black text-stone-900">{activeVariant?.stock ?? product.stock} <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">Units left</span></p>
+                <p className="text-2xl font-black text-stone-900">{availableStock} <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">Units left</span></p>
               </div>
 
               <div className="rounded-3xl border border-stone-100 bg-stone-50/50 p-6">
@@ -191,13 +183,23 @@ export default function ProductPage() {
             <div className="space-y-4 pt-4">
               <button 
                 type="button" 
-                onClick={() => addToCart(product, 1, selectedColor)} 
+                onClick={() => addToCart(product, 1, selectedColor)}
+                disabled={isOutOfStock}
                 className="btn-primary w-full shadow-2xl py-5 text-lg"
               >
-                Add to Luxury Bag
+                {isOutOfStock ? "Sold Out" : "Add to Luxury Bag"}
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
+              </button>
+
+              <button
+                type="button"
+                onClick={buyNow}
+                disabled={isOutOfStock}
+                className="w-full rounded-full border-2 border-stone-900 bg-white px-6 py-5 text-lg font-black text-stone-900 shadow-xl shadow-stone-100 transition-all hover:bg-stone-900 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:border-stone-200 disabled:bg-stone-100 disabled:text-stone-400 disabled:hover:bg-stone-100"
+              >
+                {isOutOfStock ? "Unavailable" : "Buy Now"}
               </button>
 
               <div className="rounded-3xl bg-zinc-900 p-6 text-white shadow-2xl">

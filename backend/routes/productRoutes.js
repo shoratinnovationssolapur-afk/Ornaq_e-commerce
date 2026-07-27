@@ -17,7 +17,8 @@ import {
   getSearchSuggestions,
   getTrending,
   updateProduct,
-  updateStock
+  updateStock,
+  getProductBySareeCode
 } from "../controllers/productController.js";
 import { authorize, protect } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
@@ -33,7 +34,8 @@ const productValidation = [
   body("color").optional().trim(),
   body("description").trim().notEmpty(),
   body("stock").isInt({ min: 0 }),
-  body("discountPercent").optional().isFloat({ min: 0, max: 90 }),
+  body("marketPrice").optional().isFloat({ min: 0 }),
+  body("offerPrice").optional().isFloat({ min: 0 }),
   body("images").optional().isArray()
 ];
 
@@ -45,6 +47,7 @@ router.get("/trending", getTrending);
 router.get("/discovery/:id", getProductDiscoveryFeed);
 router.get("/recommendations/:id", getRecommendations);
 router.get("/:id/serviceability/:pincode", checkServiceability);
+router.get("/saree/:code", getProductBySareeCode);
 router.get("/", getProducts);
 router.get("/:slug", getProductBySlug);
 
