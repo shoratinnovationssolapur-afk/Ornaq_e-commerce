@@ -1,7 +1,8 @@
 import { io } from "socket.io-client";
+import { getStoredToken } from "../utils/authSession";
 
 const resolveAuth = () => ({
-  token: localStorage.getItem("token") || undefined
+  token: getStoredToken() || undefined
 });
 
 const trimTrailingSlash = (value = "") => value.replace(/\/+$/, "");

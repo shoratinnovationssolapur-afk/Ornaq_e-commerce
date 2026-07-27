@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { syncSocketAuth } from "../services/socket";
+import { clearStoredToken, getStoredToken, hasValidStoredToken, onAuthSessionChange, setStoredToken } from "../utils/authSession";
 
 const AuthContext = createContext(null);
 
@@ -10,9 +11,10 @@ export function AuthProvider({ children }) {
   const isAdmin = useMemo(() => String(user?.role || "").toLowerCase() === "admin", [user]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getStoredToken();
     syncSocketAuth();
-    if (!token) {
+    if (!token || !hasValidStoredToken()) {
+      if (token) clearStoredToken();
       setLoading(false);
       return;
     }
@@ -20,15 +22,22 @@ export function AuthProvider({ children }) {
       .get("/auth/profile")
       .then((res) => setUser(res.data))
       .catch(() => {
-        localStorage.removeItem("token");
+        clearStoredToken();
         setUser(null);
         syncSocketAuth();
       })
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => onAuthSessionChange(() => {
+    if (!getStoredToken()) {
+      setUser(null);
+      syncSocketAuth();
+    }
+  }), []);
+
   const persistSession = (payload) => {
-    localStorage.setItem("token", payload.token);
+    setStoredToken(payload.token);
     setUser(payload.user);
     syncSocketAuth();
     return payload;
@@ -65,7 +74,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    clearStoredToken();
     setUser(null);
     syncSocketAuth();
   };

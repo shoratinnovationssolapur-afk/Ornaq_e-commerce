@@ -57,8 +57,8 @@ function AppRoutes() {
           <Route path="/order-result" element={<OrderResultPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/profile/orders" element={<Navigate to="/home" replace />} />
-          <Route path="/profile/orders/:id" element={<ProtectedRoute adminOnly><OrderTrackingPage /></ProtectedRoute>} />
-          <Route path="/track-order/:id" element={<ProtectedRoute adminOnly><OrderTrackingPage /></ProtectedRoute>} />
+          <Route path="/profile/orders/:id" element={<ProtectedRoute><OrderTrackingPage /></ProtectedRoute>} />
+          <Route path="/track-order/:id" element={<ProtectedRoute><OrderTrackingPage /></ProtectedRoute>} />
           <Route path="/admin" element={<LoginPage />} />
           <Route path="/admin/login" element={<LoginPage />} />
           <Route path="/admin/dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
