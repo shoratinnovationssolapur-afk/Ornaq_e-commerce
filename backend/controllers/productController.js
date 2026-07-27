@@ -144,6 +144,7 @@ const withPopularity = (product) => {
 const formatProduct = (product) => {
   const doc = typeof product.toObject === "function" ? product.toObject() : { ...product };
   const colors = normalizeColorList(doc.colors, doc.color);
+  const sizes = parseArrayInput(doc.sizes);
   const marketPrice = getMarketPrice(doc);
   const offerPrice = getOfferPrice(doc);
   const variants =
@@ -161,6 +162,7 @@ const formatProduct = (product) => {
     ...doc,
     color: doc.color || colors[0] || "Multicolor",
     colors,
+    sizes,
     variants,
     images: sanitizeImages(doc.images),
     modelImages: sanitizeImages(doc.modelImages),
@@ -201,6 +203,7 @@ const buildProductPayload = (body, previousProduct) => {
   const images = sanitizeImages(Array.isArray(body.images) ? body.images : previousProduct?.images || []);
   const modelImages = sanitizeImages(Array.isArray(body.modelImages) ? body.modelImages : previousProduct?.modelImages || []);
   const colors = normalizeColorList(parseArrayInput(body.colors), body.color || previousProduct?.color || "");
+  const sizes = parseArrayInput(body.sizes).length ? parseArrayInput(body.sizes) : previousProduct?.sizes || [];
   const variants = buildVariantPayload({
     colors,
     variants: parseVariantsInput(body.variants),
@@ -230,6 +233,7 @@ const buildProductPayload = (body, previousProduct) => {
     fabric: normalizeString(body.fabric) || previousProduct?.fabric || "Soft Silk",
     color: colors[0] || normalizeString(body.color) || previousProduct?.color || "Multicolor",
     colors,
+    sizes,
     variants,
     price: marketPrice,
     marketPrice,

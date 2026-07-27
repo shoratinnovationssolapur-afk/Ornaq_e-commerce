@@ -67,6 +67,9 @@ export const getProductColors = (product) => {
   return product?.color ? [product.color] : [];
 };
 
+export const getProductSizes = (product) =>
+  Array.isArray(product?.sizes) ? product.sizes.filter(Boolean) : [];
+
 export const isJewelleryCategory = (category = "") =>
   String(category).trim().toLowerCase() === JEWELLERY_CATEGORY.toLowerCase();
 

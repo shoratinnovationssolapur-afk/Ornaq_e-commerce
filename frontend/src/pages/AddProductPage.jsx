@@ -20,6 +20,7 @@ export default function AddProductPage() {
     fabric: "",
     color: "",
     colorsInput: "",
+    sizesInput: "",
     marketPrice: "",
     offerPrice: "",
     stock: "",
@@ -129,6 +130,10 @@ export default function AddProductPage() {
         .map((item) => item.trim())
         .filter(Boolean);
       const allColors = Array.from(new Set([form.color || colors[0] || "", ...colors].filter(Boolean)));
+      const sizes = form.sizesInput
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
       
       const normalizedBaseSlug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "product";
       const distinctProductCode = form.sareeCode.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -153,6 +158,7 @@ export default function AddProductPage() {
         slug: `${normalizedBaseSlug}-${distinctProductCode}`,
         color: form.color || colors[0] || "",
         colors,
+        sizes,
         price: Number(form.marketPrice),
         marketPrice: Number(form.marketPrice),
         offerPrice: Number(form.offerPrice || form.marketPrice),
@@ -279,6 +285,10 @@ export default function AddProductPage() {
                       <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Variant Palette</label>
                       <input className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Red, Gold" value={form.colorsInput || ""} onChange={(event) => setForm((current) => ({ ...current, colorsInput: event.target.value }))} />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-4">Size Options</label>
+                    <input className="w-full rounded-2xl bg-stone-50 px-6 py-4 text-sm font-bold border-transparent focus:bg-white focus:border-brand-300 focus:ring-0 transition-all" placeholder="Free Size, S, M, L, XL" value={form.sizesInput || ""} onChange={(event) => setForm((current) => ({ ...current, sizesInput: event.target.value }))} />
                   </div>
                 </div>
               </div>

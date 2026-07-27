@@ -42,6 +42,7 @@ const productSchema = new mongoose.Schema(
     fabric: { type: String, required: true, index: true },
     color: { type: String, required: true, index: true },
     colors: [{ type: String, trim: true, index: true }],
+    sizes: [{ type: String, trim: true, index: true }],
     variants: [variantSchema],
     price: { type: Number, required: true, min: 0, index: true },
     marketPrice: { type: Number, min: 0, index: true },

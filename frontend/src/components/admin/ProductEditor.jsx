@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
-import { getProductColors, getProductImage, isJewelleryCategory, mergeCategories } from "../../utils/catalog";
+import { getProductColors, getProductImage, getProductSizes, isJewelleryCategory, mergeCategories } from "../../utils/catalog";
 
 const emptyForm = {
   name: "",
@@ -10,6 +10,7 @@ const emptyForm = {
   fabric: "",
   color: "",
   colorsInput: "",
+  sizesInput: "",
   marketPrice: "",
   offerPrice: "",
   stock: "",
@@ -51,6 +52,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
     }
 
     const productColors = getProductColors(product);
+    const productSizes = getProductSizes(product);
     setForm({
       name: product.name || "",
       description: product.description || "",
@@ -59,6 +61,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
       fabric: product.fabric || "",
       color: product.color || productColors[0] || "",
       colorsInput: productColors.join(", "),
+      sizesInput: productSizes.join(", "),
       marketPrice: product.marketPrice || product.price || "",
       offerPrice: product.offerPrice || product.discountPrice || product.price || "",
       stock: product.stock || 0,
@@ -109,6 +112,10 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean);
+      const sizes = form.sizesInput
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
       const allColors = Array.from(new Set([form.color || colors[0] || "", ...colors].filter(Boolean)));
       const variants = await Promise.all(
         allColors.map(async (color, index) => {
@@ -129,6 +136,7 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
         classification: form.classification,
         color: form.color || colors[0] || "",
         colors,
+        sizes,
         price: Number(form.marketPrice),
         marketPrice: Number(form.marketPrice),
         offerPrice: Number(form.offerPrice || form.marketPrice),
@@ -212,6 +220,10 @@ export default function ProductEditor({ product, categories, onClose, onSaved })
               <div>
                 <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">All color variants</label>
                 <input value={form.colorsInput} onChange={(event) => setForm((current) => ({ ...current, colorsInput: event.target.value }))} placeholder="Wine, Rose Gold, Pearl Beige" className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Size options</label>
+                <input value={form.sizesInput} onChange={(event) => setForm((current) => ({ ...current, sizesInput: event.target.value }))} placeholder="Free Size, S, M, L, XL" className="mt-2 w-full rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100" />
               </div>
             </div>
           </div>
