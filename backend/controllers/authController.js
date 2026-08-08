@@ -37,6 +37,70 @@ const buildOtpHash = (code) => crypto.createHash("sha256").update(String(code)).
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
+const getOtpExpiryMinutes = () => {
+  const expiryMinutes = Number.parseInt(process.env.OTP_EXPIRY_MINUTES || "5", 10);
+  return Number.isFinite(expiryMinutes) && expiryMinutes > 0 ? expiryMinutes : 5;
+};
+
+const buildOtpExpiryDate = () => new Date(Date.now() + 1000 * 60 * getOtpExpiryMinutes());
+
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const buildNameFromEmail = (email) => {
+  const localPart = String(email || "").split("@")[0] || "Customer";
+  const name = localPart.replace(/[._-]+/g, " ").trim();
+  return name || "ORNAQ Customer";
+};
+
+const assignOtpLogin = (user, otp) => {
+  user.otpLogin = {
+    codeHash: buildOtpHash(otp),
+    expiresAt: buildOtpExpiryDate(),
+    attempts: 0
+  };
+};
+
+const sendEmailOtp = async (email, otp) => {
+  const expiryMinutes = getOtpExpiryMinutes();
+  await sendEmail({
+    to: email,
+    subject: "Your ORNAQ login OTP",
+    text: `Your ORNAQ login OTP is ${otp}. It will expire in ${expiryMinutes} minutes.`,
+    html: `<p>Your ORNAQ login OTP is <strong>${otp}</strong>.</p><p>This code expires in ${expiryMinutes} minutes.</p>`
+  });
+};
+
+const validateOtpLogin = async (user, otp) => {
+  const normalizedOtp = String(otp || "").trim();
+  if (!/^\d{4,8}$/.test(normalizedOtp)) {
+    return { status: StatusCodes.BAD_REQUEST, message: "Enter a valid OTP." };
+  }
+
+  if (!user?.otpLogin?.codeHash || !user?.otpLogin?.expiresAt) {
+    return { status: StatusCodes.BAD_REQUEST, message: "OTP not requested or already used." };
+  }
+
+  if (new Date(user.otpLogin.expiresAt) < new Date()) {
+    return { status: StatusCodes.BAD_REQUEST, message: "OTP has expired. Please request a new one." };
+  }
+
+  if ((user.otpLogin.attempts || 0) >= 5) {
+    return { status: StatusCodes.TOO_MANY_REQUESTS, message: "Too many attempts. Please request a new OTP." };
+  }
+
+  const isValid = buildOtpHash(normalizedOtp) === user.otpLogin.codeHash;
+  if (!isValid) {
+    user.otpLogin.attempts = (user.otpLogin.attempts || 0) + 1;
+    await user.save();
+    return { status: StatusCodes.UNAUTHORIZED, message: "Invalid OTP." };
+  }
+
+  user.otpLogin = undefined;
+  return null;
+};
+
 const verifyGoogleCredential = async (credential) => {
   if (!credential) {
     throw new Error("Google credential is required.");
@@ -118,10 +182,50 @@ export const login = async (req, res) => {
 };
 
 export const requestOtp = async (req, res) => {
+  const email = normalizeEmail(req.body.email);
   const rawPhone = String(req.body.phone || req.body.phoneNumber || "");
+
+  if (email && !rawPhone) {
+    if (!isValidEmail(email)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Enter a valid email address." });
+    }
+
+    let user = await User.findOne({ email });
+    if (user && normalizeRole(user.role) !== "user") {
+      return res.status(StatusCodes.FORBIDDEN).json({ message: "Please use the admin login page for this account." });
+    }
+
+    if (!user) {
+      user = await User.create({
+        name: req.body.name || buildNameFromEmail(email),
+        email,
+        authProviders: ["email_otp"]
+      });
+    }
+
+    const otp = generateOtp();
+    assignOtpLogin(user, otp);
+    ensureProvider(user, "email_otp");
+    await user.save();
+
+    try {
+      await sendEmailOtp(email, otp);
+    } catch (error) {
+      console.error("Email OTP send failed:", error);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: "Failed to send email OTP. Please try again later."
+      });
+    }
+
+    return res.json({
+      message: "OTP sent to your email.",
+      previewCode: process.env.OTP_MODE === "mock" ? otp : undefined
+    });
+  }
+
   const normalizedPhone = rawPhone.replace(/\D/g, "").slice(-10); // Take last 10 digits
   if (!/^\d{10}$/.test(normalizedPhone)) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Enter a valid 10-digit mobile number." });
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Enter a valid email address or 10-digit mobile number." });
   }
 
   let user = await User.findOne({ $or: [{ phone: normalizedPhone }, { phoneNumber: normalizedPhone }] });
@@ -135,12 +239,7 @@ export const requestOtp = async (req, res) => {
   }
 
   const otp = generateOtp();
-  const expiryMinutes = parseInt(process.env.OTP_EXPIRY_MINUTES || "5");
-  user.otpLogin = {
-    codeHash: buildOtpHash(otp),
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * expiryMinutes),
-    attempts: 0
-  };
+  assignOtpLogin(user, otp);
   ensureProvider(user, "mobile_otp");
   await user.save();
 
@@ -159,31 +258,39 @@ export const requestOtp = async (req, res) => {
 };
 
 export const verifyOtp = async (req, res) => {
+  const email = normalizeEmail(req.body.email);
   const rawPhone = String(req.body.phone || req.body.phoneNumber || "");
-  const normalizedPhone = rawPhone.replace(/\D/g, "").slice(-10);
   const otp = String(req.body.otp || "").trim();
 
-  const user = await User.findOne({ $or: [{ phone: normalizedPhone }, { phoneNumber: normalizedPhone }] });
-  if (!user?.otpLogin?.codeHash || !user?.otpLogin?.expiresAt) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "OTP not requested or already used." });
-  }
+  if (email && !rawPhone) {
+    if (!isValidEmail(email)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Enter a valid email address." });
+    }
 
-  if (new Date(user.otpLogin.expiresAt) < new Date()) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "OTP has expired. Please request a new one." });
-  }
+    const user = await User.findOne({ email });
+    if (user && normalizeRole(user.role) !== "user") {
+      return res.status(StatusCodes.FORBIDDEN).json({ message: "Please use the admin login page for this account." });
+    }
 
-  if (user.otpLogin.attempts >= 5) {
-    return res.status(StatusCodes.TOO_MANY_REQUESTS).json({ message: "Too many attempts. Please request a new OTP." });
-  }
+    const otpError = await validateOtpLogin(user, otp);
+    if (otpError) {
+      return res.status(otpError.status).json({ message: otpError.message });
+    }
 
-  const isValid = buildOtpHash(otp) === user.otpLogin.codeHash;
-  if (!isValid) {
-    user.otpLogin.attempts += 1;
+    ensureProvider(user, "email_otp");
     await user.save();
-    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid OTP." });
+
+    return res.status(StatusCodes.OK).json(buildAuthResponse(user));
   }
 
-  user.otpLogin = undefined;
+  const normalizedPhone = rawPhone.replace(/\D/g, "").slice(-10);
+
+  const user = await User.findOne({ $or: [{ phone: normalizedPhone }, { phoneNumber: normalizedPhone }] });
+  const otpError = await validateOtpLogin(user, otp);
+  if (otpError) {
+    return res.status(otpError.status).json({ message: otpError.message });
+  }
+
   ensureProvider(user, "mobile_otp");
   await user.save();
 
