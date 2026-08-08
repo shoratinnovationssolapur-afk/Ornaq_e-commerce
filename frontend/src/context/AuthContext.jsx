@@ -75,13 +75,6 @@ export function AuthProvider({ children }) {
     return persistSession(res.data).user;
   };
 
-<<<<<<< HEAD
-  const logout = () => {
-    clearStoredToken();
-    setUser(null);
-    syncSocketAuth();
-  };
-=======
   const logout = (navigate, path = "/login") => {
   localStorage.removeItem("token");
   setUser(null);
@@ -89,7 +82,6 @@ export function AuthProvider({ children }) {
 
   navigate(path, { replace: true });
 };
->>>>>>> prachi
 
   const value = useMemo(
     () => ({
