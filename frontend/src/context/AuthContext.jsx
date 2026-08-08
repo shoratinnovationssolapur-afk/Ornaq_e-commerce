@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { syncSocketAuth } from "../services/socket";
 
+
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -54,8 +56,8 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
-  const verifyOtp = async ({ phone, otp }) => {
-    const res = await api.post("/auth/verify-otp", { phone, otp });
+  const verifyOtp = async ({ phone, email, otp }) => {
+    const res = await api.post("/auth/verify-otp", { phone, email, otp });
     return persistSession(res.data).user;
   };
 
@@ -64,14 +66,27 @@ export function AuthProvider({ children }) {
     return persistSession(res.data).user;
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    syncSocketAuth();
-  };
+  const logout = (navigate, path = "/login") => {
+  localStorage.removeItem("token");
+  setUser(null);
+  syncSocketAuth();
+
+  navigate(path, { replace: true });
+};
 
   const value = useMemo(
-    () => ({ user, isAdmin, loading, login, adminLogin, register, requestOtp, verifyOtp, googleLogin, logout }),
+    () => ({
+      user,
+      isAdmin,
+      loading,
+      login,
+      adminLogin,
+      register,
+      requestOtp,
+      verifyOtp,
+      googleLogin,
+      logout
+    }),
     [user, isAdmin, loading]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
