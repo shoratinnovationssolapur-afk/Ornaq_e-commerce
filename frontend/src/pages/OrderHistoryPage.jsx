@@ -5,15 +5,14 @@ import SkeletonBlock from "../components/SkeletonBlock";
 import { formatCurrency } from "../utils/catalog";
 
 const statusClasses = {
-  PLACED: "bg-blue-50 text-blue-700",
+  PENDING: "bg-amber-50 text-amber-700",
+  PAYMENT_DECLINED: "bg-red-50 text-red-700",
   CONFIRMED: "bg-indigo-50 text-indigo-700",
   SHIPPED: "bg-violet-50 text-violet-700",
   OUT_FOR_DELIVERY: "bg-amber-50 text-amber-700",
   DELIVERED: "bg-emerald-50 text-emerald-700",
   CANCELLED: "bg-red-50 text-red-700",
-  PAYMENT_FAILED: "bg-red-50 text-red-700"
 };
-
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);

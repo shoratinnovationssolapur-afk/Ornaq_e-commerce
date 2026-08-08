@@ -92,8 +92,8 @@ ADMIN_PHONE=9999999999
 Create `frontend/.env` from `frontend/.env.example`:
 
 ```env
-VITE_API_URL=http://localhost:5000/api
-VITE_SOCKET_URL=http://localhost:5000
+VITE_API_URL=https://api.ornaq.in//api
+VITE_SOCKET_URL=https://api.ornaq.in/
 VITE_RAZORPAY_KEY_ID=rzp_test_xxxxx
 ```
 
@@ -117,7 +117,7 @@ From `backend`:
 npm run dev
 ```
 
-Backend runs on `http://localhost:5000`.
+Backend runs on `https://api.ornaq.in/`.
 
 ## 6) Start frontend
 

@@ -13,6 +13,7 @@ import {
 } from "../controllers/orderController.js";
 import { authorize, optionalProtect, protect } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
+import { handleRazorpayPaymentFailure } from "../controllers/paymentController.js";
 
 const router = express.Router();
 
@@ -37,6 +38,11 @@ router.get("/:id/invoice", protect, getInvoice);
 router.get("/:id", protect, getOrderById);
 router.post("/:id/cancel", protect, [body("reason").optional().isString()], validateRequest, cancelOrder);
 router.post("/:id/return", protect, [body("reason").optional().isString()], validateRequest, requestReturn);
+router.post(
+  "/payment-failed",
+  protect,
+  handleRazorpayPaymentFailure
+);
 router.patch(
   "/:id/status",
   protect,

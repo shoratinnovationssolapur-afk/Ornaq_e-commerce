@@ -12,14 +12,14 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:5000/api
-        VITE_SOCKET_URL: http://localhost:5000
+        VITE_API_URL: https://api.ornaq.in/api
+        VITE_SOCKET_URL: https://api.ornaq.in/
         VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-439706206780-ijguhjttgfboes0b78k3cpr3snvooc7p.apps.googleusercontent.com}
     ports:
       - "4173:4173"
     environment:
-      - VITE_API_URL=http://localhost:5000/api
-      - VITE_SOCKET_URL=http://localhost:5000
+      - VITE_API_URL=https://api.ornaq.in/api
+      - VITE_SOCKET_URL=https://api.ornaq.in/
     depends_on:
       - backend
     restart: unless-stopped

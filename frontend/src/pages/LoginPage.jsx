@@ -3,12 +3,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
-import { Mail, Lock, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAdmin, loading: authLoading, adminLogin } = useAuth();
+  const { isAdmin, loading: authLoading, adminLogin } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -74,7 +74,7 @@ export default function LoginPage() {
               type="email"
               placeholder="admin@ornac.com"
               value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
             />
           </div>
         </div>
@@ -89,7 +89,7 @@ export default function LoginPage() {
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              onChange={(event) => setForm({ ...form, password: event.target.value })}
             />
             <button
               type="button"
@@ -102,10 +102,7 @@ export default function LoginPage() {
         </div>
 
         {error && <p className="text-xs font-bold text-red-500 ml-2">{error}</p>}
-        <button
-          disabled={loading}
-          className="btn-primary w-full py-4 shadow-xl shadow-stone-200/50"
-        >
+        <button disabled={loading} className="btn-primary w-full py-4 shadow-xl shadow-stone-200/50">
           {loading ? "Signing in..." : "Sign In to Dashboard"}
         </button>
       </motion.form>

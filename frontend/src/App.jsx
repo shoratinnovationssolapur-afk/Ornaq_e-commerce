@@ -10,6 +10,7 @@ import CartPage from "./pages/CartPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import WishlistPage from "./pages/WishlistPage";
 import LoginPage from "./pages/LoginPage";
+import UserLoginPage from "./pages/UserLoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderResultPage from "./pages/OrderResultPage";
@@ -23,6 +24,8 @@ import InfoPage from "./pages/InfoPage";
 import ToastViewport from "./components/ToastViewport";
 import ProductDetails from "./pages/ProductDetails";
 import PolicyManagementPage from "./pages/PolicyManagementPage";
+import { useAuth } from "./context/AuthContext";
+import OrderHistoryPage from "./pages/OrderHistoryPage";
 
 function ScrollToTop() {
   const { pathname, search } = useLocation();
@@ -32,6 +35,14 @@ function ScrollToTop() {
   }, [pathname, search]);
 
   return null;
+}
+
+function EntryRoute() {
+  const { user, isAdmin, loading } = useAuth();
+
+  if (loading) return <div className="p-8 text-center text-stone-500">Loading your account...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return <Navigate to={isAdmin ? "/admin/dashboard" : "/home"} replace />;
 }
 
 function AppRoutes() {
@@ -47,7 +58,7 @@ function AppRoutes() {
       <ToastViewport />
       <main className="pt-16 overflow-x-hidden min-h-screen bg-[#fffdf9]">
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<EntryRoute />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/shop" element={<ShopPage />} />
@@ -56,9 +67,10 @@ function AppRoutes() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-result" element={<OrderResultPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
-          <Route path="/profile/orders" element={<Navigate to="/home" replace />} />
-          <Route path="/profile/orders/:id" element={<ProtectedRoute><OrderTrackingPage /></ProtectedRoute>} />
-          <Route path="/track-order/:id" element={<ProtectedRoute><OrderTrackingPage /></ProtectedRoute>} />
+          <Route path="/login" element={<UserLoginPage />} />
+          <Route path="/profile/orders" element={<OrderHistoryPage />} />
+          <Route path="/profile/orders/:id" element={<ProtectedRoute adminOnly><OrderTrackingPage /></ProtectedRoute>} />
+          <Route path="/track-order/:id" element={<ProtectedRoute adminOnly><OrderTrackingPage /></ProtectedRoute>} />
           <Route path="/admin" element={<LoginPage />} />
           <Route path="/admin/login" element={<LoginPage />} />
           <Route path="/admin/dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
@@ -77,6 +89,10 @@ function AppRoutes() {
           <Route path="/contact" element={<InfoPage slug="contact" />} />
           <Route path="/faq" element={<InfoPage slug="faq" />} />
           <Route path="/policies/:slug" element={<InfoPage />} />
+          <Route
+  path="/profile/orders"
+  element={<OrderHistoryPage />}
+/>
           <Route
             path="/saree/:code"
             element={<ProductDetails />}
