@@ -30,19 +30,20 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: { type: String, enum: ["COD", "MOCK", "RAZORPAY", "STRIPE"], required: true },
     paymentStatus: { type: String, enum: ["PENDING", "PAID", "FAILED", "REFUNDED"], default: "PENDING" },
     orderStatus: {
-      type: String,
-      enum: [
-        "PLACED",
-        "CONFIRMED",
-        "PACKED",
-        "SHIPPED",
-        "OUT_FOR_DELIVERY",
-        "DELIVERED",
-        "PAYMENT_FAILED",
-        "CANCELLED"
-      ],
-      default: "PLACED"
-    },
+  type: String,
+  enum: [
+    "PENDING",
+    "PLACED",
+    "CONFIRMED",
+    "PACKED",
+    "SHIPPED",
+    "OUT_FOR_DELIVERY",
+    "DELIVERED",
+    "PAYMENT_FAILED",
+    "CANCELLED"
+  ],
+  default: "PENDING"
+},
     statusTimeline: [
       {
         status: String,
