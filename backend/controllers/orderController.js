@@ -215,9 +215,9 @@ export const createOrder = async (req, res) => {
     discountAmount: 0,
     totalAmount,
     paymentStatus: "PENDING",
-    orderStatus: "PLACED",
+    orderStatus: "PENDING",
     estimatedDeliveryAt: buildEstimatedDeliveryDate(orderedProducts),
-    statusTimeline: [{ status: "PLACED", note: "Order placed successfully.", changedAt: new Date() }]
+    statusTimeline: [{ status: "PENDING", note: "Order placed successfully.", changedAt: new Date() }]
   });
   order.invoiceNumber = buildInvoiceNumber(order._id);
   let paymentResult = null;
@@ -236,18 +236,31 @@ export const createOrder = async (req, res) => {
     order.paymentStatus = paymentResult.status;
     order.transactionId = paymentResult.transactionId;
     order.razorpayOrderId = paymentResult.gatewayOrder?.id || order.razorpayOrderId;
+if (paymentResult.status === "PENDING") {
+  order.orderStatus = "PENDING";
 
-    if (paymentResult.status === "PENDING") {
-      order.orderStatus = "PLACED";
-      order.statusTimeline = pushStatus(order.statusTimeline, "PLACED", "Awaiting online payment.");
-    } else {
-      order.orderStatus = paymentResult.success ? "CONFIRMED" : "PAYMENT_FAILED";
-      order.statusTimeline = pushStatus(
-        order.statusTimeline,
-        paymentResult.success ? "CONFIRMED" : "PAYMENT_FAILED",
-        paymentResult.success ? "Online payment successful." : "Payment failed."
-      );
-    }
+  order.statusTimeline = pushStatus(
+    order.statusTimeline,
+    "PENDING",
+    "Awaiting online payment."
+  );
+} else if (paymentResult.success) {
+  order.orderStatus = "CONFIRMED";
+
+  order.statusTimeline = pushStatus(
+    order.statusTimeline,
+    "CONFIRMED",
+    "Online payment successful."
+  );
+} else {
+  order.orderStatus = "PAYMENT_DECLINED";
+
+  order.statusTimeline = pushStatus(
+    order.statusTimeline,
+    "PAYMENT_DECLINED",
+    "Payment was declined."
+  );
+}
 
     if (paymentResult.success) {
       await reduceStockForOrder(order, req.io);
@@ -537,6 +550,7 @@ const legacyUpdateOrderStatusUnused = async (req, res) => {
     });
   }
 };
+ 
 
 export const updateOrderStatus = async (req, res) => {
   const order = await Order.findById(req.params.id).populate("userId", "name email phone");
