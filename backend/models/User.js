@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     phoneNumber: { type: String, index: true, sparse: true },
     avatar: String,
     googleId: { type: String, index: true, sparse: true },
-    authProviders: [{ type: String, enum: ["password", "mobile_otp", "google"] }],
+    authProviders: [{ type: String, enum: ["password", "mobile_otp", "email_otp", "google"] }],
     otpLogin: {
       codeHash: String,
       expiresAt: Date,
