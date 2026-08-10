@@ -6,8 +6,11 @@ import { formatCurrency } from "../utils/catalog";
 
 const statusClasses = {
   PENDING: "bg-amber-50 text-amber-700",
+  PLACED: "bg-blue-50 text-blue-700",
+  PAYMENT_FAILED: "bg-red-50 text-red-700",
   PAYMENT_DECLINED: "bg-red-50 text-red-700",
   CONFIRMED: "bg-indigo-50 text-indigo-700",
+  PACKED: "bg-cyan-50 text-cyan-700",
   SHIPPED: "bg-violet-50 text-violet-700",
   OUT_FOR_DELIVERY: "bg-amber-50 text-amber-700",
   DELIVERED: "bg-emerald-50 text-emerald-700",
