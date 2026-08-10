@@ -49,6 +49,7 @@ router.patch(
   authorize("admin"),
   [
     body("orderStatus").isIn([
+      "PENDING",
       "PLACED",
       "CONFIRMED",
       "PACKED",
