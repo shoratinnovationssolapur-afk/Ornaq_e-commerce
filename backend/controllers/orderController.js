@@ -3,6 +3,7 @@ import Cart from "../models/Cart.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { sendCustomerNotification } from "../services/notificationService.js";
+import { notifyOrderStatus } from "../services/orderNotificationService.js";
 import { generateInvoiceBuffer } from "../services/invoiceService.js";
 import { syncOrderToSalesRegister } from "../services/salesRegisterService.js";
 import { processPayment } from "../services/payment/paymentService.js";
@@ -17,6 +18,15 @@ import { calculatePopularityScore } from "../utils/productUtils.js";
 import { isServiceablePincode } from "../utils/serviceability.js";
 
 const STOCK_SENSITIVE_STATUSES = new Set(["CONFIRMED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"]);
+const CUSTOMER_STATUS_EMAILS = new Set([
+  "PLACED",
+  "CONFIRMED",
+  "SHIPPED",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "PAYMENT_FAILED",
+  "CANCELLED"
+]);
 
 const updateVariantStock = (product, selectedColor, delta) => {
   if (!selectedColor || !Array.isArray(product.variants) || !product.variants.length) return;
@@ -253,11 +263,11 @@ if (paymentResult.status === "PENDING") {
     "Online payment successful."
   );
 } else {
-  order.orderStatus = "PAYMENT_DECLINED";
+  order.orderStatus = "PAYMENT_FAILED";
 
   order.statusTimeline = pushStatus(
     order.statusTimeline,
-    "PAYMENT_DECLINED",
+    "PAYMENT_FAILED",
     "Payment was declined."
   );
 }
@@ -286,6 +296,14 @@ if (paymentResult.status === "PENDING") {
     template: "order_placed",
     meta: { orderId: String(order._id), status: order.orderStatus }
   });
+
+  if (order.orderStatus === "CONFIRMED") {
+    await notifyOrderStatus({ order, user: req.user, status: "CONFIRMED" });
+  }
+
+  if (order.orderStatus === "PAYMENT_FAILED") {
+    await notifyOrderStatus({ order, user: req.user, status: "PAYMENT_FAILED" });
+  }
 
   try {
     await syncOrderToSalesRegister(order);
@@ -568,37 +586,12 @@ export const updateOrderStatus = async (req, res) => {
     }
   }
 
-  if (nextStatus === "SHIPPED") {
-    await notifyOrderUpdate({
-      user: buildOrderContact(order),
-      subject: "Your Ornac order has shipped",
-      message: `Your order ${order.invoiceNumber} has shipped and is on the way.`,
-      template: "order_shipped",
-      meta: { orderId: String(order._id), status: order.orderStatus }
-    });
-  }
-
-  if (nextStatus === "OUT_FOR_DELIVERY") {
-    await notifyOrderUpdate({
-      user: buildOrderContact(order),
-      subject: "Your Ornac order is out for delivery today",
-      message: `Your order ${order.invoiceNumber} is out for delivery today and will reach your home shortly. Please keep your phone available for the delivery partner.`,
-      template: "order_out_for_delivery",
-      meta: { orderId: String(order._id), status: order.orderStatus }
-    });
-  }
-
-  if (nextStatus === "DELIVERED") {
-    await notifyOrderUpdate({
-      user: buildOrderContact(order),
-      subject: "Your Ornac order has been delivered",
-      message: `Your order ${order.invoiceNumber} has been delivered to your home today. Thank you for shopping with us.`,
-      template: "order_delivered",
-      meta: { orderId: String(order._id), status: order.orderStatus }
-    });
-  }
-
   await order.save();
+
+  if (nextStatus !== previousStatus && CUSTOMER_STATUS_EMAILS.has(nextStatus)) {
+    await notifyOrderStatus({ order, status: nextStatus });
+  }
+
   emitToOrderUser(req.io, order, "order:status-updated", serializeOrder(order));
   req.io.emit("admin:order-updated", serializeOrder(order));
   return res.json(serializeOrder(order));
