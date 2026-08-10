@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import api, { getApiErrorMessage } from "../services/api";
 
 export default function ProfilePage() {
-  const { user, updateUserState } = useAuth(); // Assuming updateUserState or similar exists to refresh context
+  const { user, updateUserState } = useAuth();
   const { showToast } = useNotification();
 
   // Local Form State
@@ -15,6 +15,13 @@ export default function ProfilePage() {
     name: user?.name || "",
     phone: user?.phone || "",
   });
+
+  useEffect(() => {
+    setFormData({
+      name: user?.name || "",
+      phone: user?.phone || "",
+    });
+  }, [user]);
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
