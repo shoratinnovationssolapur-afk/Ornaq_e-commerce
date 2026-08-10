@@ -1,11 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import api, { getApiErrorMessage } from "../../services/api";
 import { formatCurrency } from "../../utils/catalog";
 
 const STATUS_COLORS = {
   PENDING: "bg-amber-100 text-amber-700",
+  PAYMENT_FAILED: "bg-red-100 text-red-700",
   PAYMENT_DECLINED: "bg-red-100 text-red-700",
   PLACED: "bg-blue-100 text-blue-700",
   CONFIRMED: "bg-indigo-100 text-indigo-700",
+  PACKED: "bg-cyan-100 text-cyan-700",
   SHIPPED: "bg-purple-100 text-purple-700",
   OUT_FOR_DELIVERY: "bg-amber-100 text-amber-700",
   DELIVERED: "bg-emerald-100 text-emerald-700",
@@ -15,11 +18,24 @@ const STATUS_COLORS = {
 const FILTERS = [
   { label: "All", value: "" },
   { label: "Pending", value: "PENDING" },
-  { label: "Payment Declined", value: "PAYMENT_DECLINED" },
-  { label: "Confirmed", value: "CONFIRMED" },
   { label: "Placed", value: "PLACED" },
+  { label: "Confirmed", value: "CONFIRMED" },
+  { label: "Packed", value: "PACKED" },
   { label: "Shipped", value: "SHIPPED" },
   { label: "Delivered", value: "DELIVERED" },
+  { label: "Payment Failed", value: "PAYMENT_FAILED" },
+  { label: "Cancelled", value: "CANCELLED" },
+];
+
+const ORDER_STATUS_OPTIONS = [
+  { label: "Pending", value: "PENDING" },
+  { label: "Placed", value: "PLACED" },
+  { label: "Confirmed", value: "CONFIRMED" },
+  { label: "Packed", value: "PACKED" },
+  { label: "Shipped", value: "SHIPPED" },
+  { label: "Out for Delivery", value: "OUT_FOR_DELIVERY" },
+  { label: "Delivered", value: "DELIVERED" },
+  { label: "Payment Failed", value: "PAYMENT_FAILED" },
   { label: "Cancelled", value: "CANCELLED" },
 ];
 
@@ -29,6 +45,50 @@ export default function OrderManagement({
   filterValue,
   onFilterChange,
 }) {
+  const [statusDrafts, setStatusDrafts] = useState({});
+  const [noteDrafts, setNoteDrafts] = useState({});
+  const [updatingOrderId, setUpdatingOrderId] = useState("");
+  const [statusError, setStatusError] = useState("");
+
+  useEffect(() => {
+    setStatusDrafts((current) => {
+      const next = { ...current };
+
+      orders.forEach((order) => {
+        const serverStatus = order.orderStatus || "PENDING";
+        if (!next[order._id] || next[order._id] === serverStatus) {
+          next[order._id] = serverStatus;
+        }
+      });
+
+      return next;
+    });
+  }, [orders]);
+
+  const updateOrderStatus = async (order) => {
+    const currentStatus = order.orderStatus || "PENDING";
+    const nextStatus = statusDrafts[order._id] || currentStatus;
+
+    if (nextStatus === currentStatus) return;
+
+    setUpdatingOrderId(order._id);
+    setStatusError("");
+
+    try {
+      const note = noteDrafts[order._id]?.trim();
+      await api.patch(`/orders/${order._id}/status`, {
+        orderStatus: nextStatus,
+        note: note || `Admin updated order status to ${nextStatus.replaceAll("_", " ").toLowerCase()}.`,
+      });
+      setNoteDrafts((current) => ({ ...current, [order._id]: "" }));
+      await refreshOrders();
+    } catch (error) {
+      setStatusError(getApiErrorMessage(error, "Unable to update order status."));
+    } finally {
+      setUpdatingOrderId("");
+    }
+  };
+
   /*
    * Fetch latest order status automatically.
    *
@@ -75,6 +135,12 @@ export default function OrderManagement({
           ))}
         </div>
       </div>
+
+      {statusError && (
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600">
+          {statusError}
+        </div>
+      )}
 
       {/* Orders Table */}
       <div className="overflow-hidden rounded-[2.5rem] border border-stone-50 bg-white shadow-2xl shadow-stone-100">
@@ -148,13 +214,55 @@ export default function OrderManagement({
 
                     {/* Current Status */}
                     <td className="px-8 py-6">
-                      <span
-                        className={`inline-flex rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest ${
-                          STATUS_COLORS[status] || "bg-stone-100 text-stone-600"
-                        }`}
-                      >
-                        {status.replaceAll("_", " ")}
-                      </span>
+                      <div className="min-w-[260px] space-y-3">
+                        <span
+                          className={`inline-flex rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest ${
+                            STATUS_COLORS[status] || "bg-stone-100 text-stone-600"
+                          }`}
+                        >
+                          {status.replaceAll("_", " ")}
+                        </span>
+
+                        <div className="grid gap-2">
+                          <select
+                            value={statusDrafts[order._id] || status}
+                            onChange={(event) =>
+                              setStatusDrafts((current) => ({
+                                ...current,
+                                [order._id]: event.target.value,
+                              }))
+                            }
+                            className="w-full rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-stone-700 outline-none transition-all focus:border-brand-300 focus:bg-white"
+                          >
+                            {ORDER_STATUS_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+
+                          <input
+                            value={noteDrafts[order._id] || ""}
+                            onChange={(event) =>
+                              setNoteDrafts((current) => ({
+                                ...current,
+                                [order._id]: event.target.value,
+                              }))
+                            }
+                            className="w-full rounded-xl border border-stone-100 bg-white px-3 py-2 text-xs font-medium text-stone-600 outline-none transition-all placeholder:text-stone-300 focus:border-brand-300"
+                            placeholder="Optional customer timeline note"
+                          />
+
+                          <button
+                            type="button"
+                            disabled={updatingOrderId === order._id || (statusDrafts[order._id] || status) === status}
+                            onClick={() => updateOrderStatus(order)}
+                            className="rounded-xl bg-stone-900 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-200"
+                          >
+                            {updatingOrderId === order._id ? "Updating..." : "Update Status"}
+                          </button>
+                        </div>
+                      </div>
                     </td>
 
                     {/* Orchestration */}
@@ -175,7 +283,7 @@ export default function OrderManagement({
 
                         {/* View order */}
                         <a
-                          href={`/profile/orders/${order._id}`}
+                          href={`/track-order/${order._id}`}
                           target="_blank"
                           rel="noreferrer"
                           className="flex h-9 w-9 items-center justify-center rounded-xl border border-stone-100 text-stone-400 transition-all hover:bg-stone-50 hover:text-stone-900"
