@@ -247,7 +247,7 @@ export default function Navbar() {
                     </p>
 
                     <p className="max-w-[100px] truncate text-[9px] text-zinc-400">
-                      {user.email || ""}
+                      Settings
                     </p>
                   </div>
 
@@ -433,18 +433,33 @@ export default function Navbar() {
 
               </div>
             ) : !user ? (
-              <NavLink
-                to="/admin/login"
-                className={({ isActive }) =>
-                  `rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
-                    isActive
-                      ? "bg-black text-white border-black"
-                      : "border-black text-black hover:bg-black hover:text-white"
-                  }`
-                }
-              >
-                Admin Login
-              </NavLink>
+              <div className="flex items-center gap-2">
+                <NavLink
+                  to="/login"
+                  className={({ isActive }) =>
+                    `rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
+                      isActive
+                        ? "border-brand-700 bg-brand-700 text-white"
+                        : "border-brand-700 text-brand-700 hover:bg-brand-700 hover:text-white"
+                    }`
+                  }
+                >
+                  User Login
+                </NavLink>
+
+                <NavLink
+                  to="/admin/login"
+                  className={({ isActive }) =>
+                    `rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
+                      isActive
+                        ? "bg-black text-white border-black"
+                        : "border-black text-black hover:bg-black hover:text-white"
+                    }`
+                  }
+                >
+                  Admin Login
+                </NavLink>
+              </div>
             ) : null}
           </div>
 
@@ -827,29 +842,55 @@ export default function Navbar() {
                         </button>
                       </>
                     ) : !user ? (
-                      <NavLink
-                        to="/admin/login"
-                        className="nav-link"
-                        onClick={closeMobileMenu}
-                      >
-                        <span className="flex-1">
-                          Admin Login
-                        </span>
-
-                        <svg
-                          className="h-5 w-5 text-zinc-300"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                      <>
+                        <NavLink
+                          to="/login"
+                          className="nav-link"
+                          onClick={closeMobileMenu}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </NavLink>
+                          <span className="flex-1">
+                            User Login
+                          </span>
+
+                          <svg
+                            className="h-5 w-5 text-zinc-300"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </NavLink>
+
+                        <NavLink
+                          to="/admin/login"
+                          className="nav-link"
+                          onClick={closeMobileMenu}
+                        >
+                          <span className="flex-1">
+                            Admin Login
+                          </span>
+
+                          <svg
+                            className="h-5 w-5 text-zinc-300"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </NavLink>
+                      </>
                     ) : null}
 
                   </div>
