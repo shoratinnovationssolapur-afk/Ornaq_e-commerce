@@ -18,7 +18,7 @@ export default function OrderResultPage() {
           </p>
           
           <h1 className="mt-4 text-3xl font-black text-stone-900 sm:text-4xl">
-            {success ? "Order Confirmed" : "Signal Lost"}
+            {success ? "Order Confirmed" : "Order is declined"}
           </h1>
           
           <p className="mt-6 text-sm font-medium leading-relaxed text-stone-500">
