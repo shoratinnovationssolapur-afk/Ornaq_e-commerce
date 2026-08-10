@@ -10,6 +10,8 @@ import CartPage from "./pages/CartPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import WishlistPage from "./pages/WishlistPage";
 import LoginPage from "./pages/LoginPage";
+import UserLoginPage from "./pages/UserLoginPage";
+import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderResultPage from "./pages/OrderResultPage";
@@ -39,16 +41,21 @@ function AppRoutes() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isAdminLoginRoute = location.pathname === "/admin" || location.pathname === "/admin/login";
+  const isUserLoginRoute = location.pathname === "/login";
+  const isAuthRoute = isUserLoginRoute || isAdminLoginRoute;
   const showAdminChrome = isAdminRoute && !isAdminLoginRoute;
+  const showCustomerChrome = !isAdminRoute && !isAuthRoute;
+  const showFooter = showCustomerChrome;
 
   return (
     <>
       <ScrollToTop />
-      {showAdminChrome ? <AdminNavbar /> : <Navbar />}
+      {showAdminChrome && <AdminNavbar />}
+      {showCustomerChrome && <Navbar />}
       <ToastViewport />
-      <main className="pt-16 overflow-x-hidden min-h-screen bg-[#fffdf9]">
+      <main className={`${isAuthRoute ? "" : "pt-16"} overflow-x-hidden min-h-screen bg-[#fffdf9]`}>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/shop" element={<ShopPage />} />
@@ -57,10 +64,12 @@ function AppRoutes() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-result" element={<OrderResultPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/login" element={<UserLoginPage />} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/profile/orders/:id" element={<ProtectedRoute ><OrderTrackingPage /></ProtectedRoute>} />
           <Route
   path="/profile/orders"
-  element={<OrderHistoryPage />}
+  element={<ProtectedRoute><OrderHistoryPage /></ProtectedRoute>}
 />
           <Route path="/track-order/:id" element={<ProtectedRoute adminOnly><OrderTrackingPage /></ProtectedRoute>} />
           <Route path="/admin" element={<LoginPage />} />
@@ -86,7 +95,7 @@ function AppRoutes() {
             element={<ProductDetails />}
           />
         </Routes>
-        {!showAdminChrome && <BusinessFooter />}
+        {showFooter && <BusinessFooter />}
       </main>
     </>
   );
