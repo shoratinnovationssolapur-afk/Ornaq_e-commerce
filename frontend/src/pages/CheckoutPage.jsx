@@ -75,6 +75,46 @@ export default function CheckoutPage() {
   const totalAmount = subtotal + shippingFee;
   const hasMissingAddressFields = !address.name || !address.phone || !address.line1 || !address.city || !address.state || !address.pincode;
 
+  const markPaymentCancelled = async ({ razorpayOrderId, fallbackOrder }) => {
+    if (!razorpayOrderId) {
+      setError("Payment was cancelled. Your order is still pending until payment is completed.");
+      return;
+    }
+
+    try {
+      const failureRes = await api.post("/orders/payment-failed", {
+        razorpay_order_id: razorpayOrderId,
+      });
+
+      showToast({
+        title: "Payment cancelled",
+        message: "We marked the payment as cancelled and notified your registered email.",
+        tone: "error",
+      });
+
+      navigate("/order-result", {
+        state: {
+          ...failureRes.data,
+          message: "Payment was cancelled. Your order has not been confirmed.",
+        },
+      });
+    } catch {
+      const message = "Payment was cancelled. Your order is still pending until payment is completed.";
+      setError(message);
+      navigate("/order-result", {
+        state: {
+          order: fallbackOrder || null,
+          payment: {
+            paymentMethod: "RAZORPAY",
+            paymentStatus: "FAILED",
+            transactionId: null,
+          },
+          message,
+        },
+      });
+    }
+  };
+
   // --- NEW FEATURE: FETCH CURRENT LOCATION ---
   const handleFetchLocation = () => {
     if (!navigator.geolocation) {
@@ -248,7 +288,10 @@ export default function CheckoutPage() {
           },
           modal: {
             ondismiss: () => {
-              setError("Payment was cancelled. Your order is still pending until payment is completed.");
+              markPaymentCancelled({
+                razorpayOrderId: razorpay.id,
+                fallbackOrder: res.data?.order || null,
+              });
             }
           }
         });
