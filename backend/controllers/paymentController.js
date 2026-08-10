@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { StatusCodes } from "http-status-codes";
 import Order from "../models/Order.js";
+import { notifyOrderStatus } from "../services/orderNotificationService.js";
 import { createRazorpayGatewayOrder } from "../services/payment/paymentService.js";
 import { syncOrderToSalesRegister } from "../services/salesRegisterService.js";
 import { pushStatus } from "../utils/orderUtils.js";
@@ -52,21 +53,31 @@ export const verifyRazorpayPayment = async (req, res) => {
   const order = await Order.findOne({
     razorpayOrderId: razorpay_order_id,
     ...(req.user?._id ? { userId: req.user._id } : {})
-  });
+  }).populate("userId", "name email phone");
 
   if (!order) {
     return res.status(StatusCodes.NOT_FOUND).json({ message: "Matching order was not found." });
   }
 
-  if (order.paymentStatus !== "PAID") {
+  const wasAlreadyPaid = order.paymentStatus === "PAID";
+  const previousStatus = order.orderStatus;
+
+  if (!wasAlreadyPaid) {
     await reduceStockForOrder(order, req.io);
   }
 
   order.paymentStatus = "PAID";
   order.transactionId = razorpay_payment_id;
   order.orderStatus = "CONFIRMED";
-  order.statusTimeline = pushStatus(order.statusTimeline, "CONFIRMED", "Razorpay payment verified.");
+  if (previousStatus !== "CONFIRMED") {
+    order.statusTimeline = pushStatus(order.statusTimeline, "CONFIRMED", "Razorpay payment verified.");
+  }
   await order.save();
+
+  if (!wasAlreadyPaid || previousStatus !== "CONFIRMED") {
+    await notifyOrderStatus({ order, user: req.user, status: "CONFIRMED" });
+  }
+
   try {
     await syncOrderToSalesRegister(order);
   } catch (error) {
@@ -109,7 +120,7 @@ export const handleRazorpayPaymentFailure = async (req, res) => {
     const order = await Order.findOne({
       razorpayOrderId: razorpay_order_id,
       ...(req.user?._id ? { userId: req.user._id } : {}),
-    });
+    }).populate("userId", "name email phone");
 
     if (!order) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -124,20 +135,28 @@ export const handleRazorpayPaymentFailure = async (req, res) => {
       });
     }
 
+    const wasAlreadyPaymentFailed = order.paymentStatus === "FAILED" && order.orderStatus === "PAYMENT_FAILED";
+
     order.paymentStatus = "FAILED";
-    order.orderStatus = "PAYMENT_DECLINED";
+    order.orderStatus = "PAYMENT_FAILED";
 
     if (razorpay_payment_id) {
       order.transactionId = razorpay_payment_id;
     }
 
-    order.statusTimeline = pushStatus(
-      order.statusTimeline,
-      "PAYMENT_DECLINED",
-      "Razorpay payment was declined."
-    );
+    if (!wasAlreadyPaymentFailed) {
+      order.statusTimeline = pushStatus(
+        order.statusTimeline,
+        "PAYMENT_FAILED",
+        "Razorpay payment was cancelled or declined."
+      );
+    }
 
     await order.save();
+
+    if (!wasAlreadyPaymentFailed) {
+      await notifyOrderStatus({ order, user: req.user, status: "PAYMENT_FAILED" });
+    }
 
     // Notify the user
     if (req.user?._id) {
