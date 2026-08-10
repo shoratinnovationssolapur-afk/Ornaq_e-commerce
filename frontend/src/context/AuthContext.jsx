@@ -75,13 +75,20 @@ export function AuthProvider({ children }) {
     return persistSession(res.data).user;
   };
 
-  const logout = (navigate, path = "/login") => {
-  localStorage.removeItem("token");
-  setUser(null);
-  syncSocketAuth();
+  const updateUserState = (updatedUser) => {
+    setUser(updatedUser);
+    return updatedUser;
+  };
 
-  navigate(path, { replace: true });
-};
+  const logout = (navigate, path = "/login") => {
+    clearStoredToken();
+    setUser(null);
+    syncSocketAuth();
+
+    if (navigate) {
+      navigate(path, { replace: true });
+    }
+  };
 
   const value = useMemo(
     () => ({
@@ -94,6 +101,7 @@ export function AuthProvider({ children }) {
       requestOtp,
       verifyOtp,
       googleLogin,
+      updateUserState,
       logout
     }),
     [user, isAdmin, loading]
